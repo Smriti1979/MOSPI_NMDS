@@ -96,7 +96,7 @@ async function getUserByUsernameDb(username) {
   return user.rows[0];
 }
 async function deleteUserDb(username) {
-  const query = `DELETE FROM pimdusers WHERE username = $1 RETURNING *`;
+  const query = `DELETE FROM users WHERE username = $1 RETURNING *`;
   const user = await poolpimd.query(query, [username]);
 
   if (user.rows.length === 0) {

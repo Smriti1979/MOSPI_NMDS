@@ -1941,8 +1941,8 @@
   
   
 },
-"/users/{userId}/role": {
-      "put": {
+"/api/pimd/user/{username}/roles": {
+      "patch": {
         "summary": "Assign a role to a user",
         "description": "Allows an authorized user with permission to grant roles to update another user's role.",
         "tags": ["User Management"],
@@ -1953,13 +1953,13 @@
         ],
         "parameters": [
           {
-            "name": "userId",
+            "name": "username",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "description": "ID of the user whose role is being updated"
+            "description": "username of the user whose role is being updated"
           }
         ],
         "requestBody": {
