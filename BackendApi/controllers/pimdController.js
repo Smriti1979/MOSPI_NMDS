@@ -11,7 +11,7 @@ const {
   createagencydb,
   // getProductByIddb,
   // getProductdb,
-  getMetaDataByIddb,
+  getMetaDataByProductNamedb,
   getagencyByIddb,
   getMetaDataByVersionP,
   getMetaDataByVersionPV,
@@ -736,10 +736,43 @@ const createMetadata = async (req, res) => {
 };
 
 const getMetaData = async (req, res) => {
-
   try {
     const metadata = await getMetaDatadb();
 
+    if (metadata?.error === true) {
+      throw metadata?.errorMessage;
+    }
+
+    // Check if metadata has a "data" field and simplify it
+    if (metadata?.data && Array.isArray(metadata.data)) {
+      metadata.data = metadata.data.map(item => {
+        if (item.data && item.data.data) {
+          item.data = item.data.data; // Flatten the nested data
+        }
+        return item;
+      });
+    }
+
+    return res.status(200).send({
+      metadata,
+      msg: "metadata",
+      statusCode: true,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: `Unable to fetch data Error=${error}` });
+  }
+};
+
+
+const getMetaDataByProductName = async (req, res) => {
+  const { Product } = req.params;
+  
+  if (Product == undefined) {
+    return res.status(400).json({ error: `product name is required` });
+  }
+  try {
+    const metadata = await getMetaDataByProductNamedb(Product);
     if (metadata?.error == true) {
       throw metadata?.errorMessage;
     }
@@ -756,31 +789,6 @@ const getMetaData = async (req, res) => {
       .json({ error: `Unable to fetch data Error=${error}` });
   }
 };
-
-// const getMetaDataById = async (req, res) => {
-//   const { Product } = req.params;
-  
-//   if (Product == undefined) {
-//     return res.status(400).json({ error: `productID is required` });
-//   }
-//   try {
-//     const metadata = await getMetaDataByIddb(Product);
-//     if (metadata?.error == true) {
-//       throw metadata?.errorMessage;
-//     }
-//     return res.status(200).send({
-//       data: metadata,
-//       msg: "metadata",
-//       statusCode: true,
-//     });
-//   } catch (error) {
-//     console.log(error);
-
-//     return res
-//       .status(500)
-//       .json({ error: `Unable to fetch data Error=${error}` });
-//   }
-// };
 
 // const getMetaDataByVersion=async(req,res)=>{
 //   const { product, version } = req.query;
@@ -889,41 +897,44 @@ const updatedMetadata = async (req, res) => {
 };
 
 const deleteMetadata = async (req, res) => {
-  let { Product } = req.params;
-  Product=Product.toLowerCase()
+  const { product } = req.params; // Use lowercase 'product' to match the route
   const user = req.user;
  
-  const userRoles = await getUserRoles(user.id);
-    
-  const hasRole1 = userRoles.includes(1);
-  
-  if (user.title !== "PIMD User" && !hasRole1) {
-    return res
-      .status(405)
-      .json({ error: `Only PIMD User or User with role 1 can delete the METADATA` });
-  }
-  if (Product == null || Product == undefined || Product == "") {
-    return res.status(400).json({ error: `product not define ` });
-  }
-
   try {
-    const result = await deleteMetadatadb(Product);
-    if (result?.error == true) {
-      throw result?.errorMessage;
+    // Fetch user roles
+    const userRoles = await getUserRoles(user.id);
+    const hasRole1 = userRoles.includes(1);
+    
+    // Permission Check
+    if (user.title !== "PIMD User" && !hasRole1) {
+      return res
+        .status(403)
+        .json({ error: "Only PIMD User or User with role 1 can delete the METADATA" });
     }
-    return res.status(200).send({
-      data: [],
-      msg: "metadata deleted successfully",
+    
+    // Check if product is provided
+    if (!product) {
+      return res.status(400).json({ error: "Product not defined" });
+    }
+
+    // Delete metadata from the database
+    const result = await deleteMetadatadb(product);
+    if (result?.error) {
+      return res.status(result.errorCode || 500).json({ error: result.errorMessage });
+    }
+
+    // Success response
+    return res.status(200).json({
+      msg: "Metadata deleted successfully",
       statusCode: true,
     });
+    
   } catch (error) {
-    console.log(error);
-
-    return res
-      .status(500)
-      .json({ error: `unable to delete the metadata ${error}` });
+    console.error("Error deleting metadata:", error);
+    return res.status(500).json({ error: `Unable to delete metadata: ${error.message || error}` });
   }
 };
+
 
 const getMetaDataByAgency = async (req, res) => {
   try {
@@ -968,7 +979,7 @@ exports.login = async (req, res) => {
 };
 
 module.exports = {
-  // getMetaDataById,
+  getMetaDataByProductName,
   getagencyById,
   // updateProduct,
   updateagency,

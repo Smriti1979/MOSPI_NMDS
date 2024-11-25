@@ -434,18 +434,18 @@ async function getMetaDatadb() {
   }
 }
 
-// async function getMetaDataByIddb(Product) {
-//   const getQuery = `SELECT * FROM  metadata where "Product"=$1  AND  latest=true`;
-//   const data = await poolpimd.query(getQuery, [Product]);
-//   if (data.rows.length == 0) {
-//     return {
-//       error: true,
-//       errorCode: 402,
-//       errorMessage: `Unable to fetch data from metaTable`,
-//     };
-//   }
-//   return data.rows[0];
-// }
+async function getMetaDataByProductNamedb(Product) {
+  const getQuery = `SELECT * FROM  metadata where "product_name"=$1  AND  latest=true`;
+  const data = await poolpimd.query(getQuery, [Product]);
+  if (data.rows.length == 0) {
+    return {
+      error: true,
+      errorCode: 402,
+      errorMessage: `Unable to fetch data from metaTable`,
+    };
+  }
+  return data.rows[0];
+}
 // async function searchMetaDatadb(searchParams) {
 //   try {
   
@@ -826,18 +826,32 @@ async function updateMetadatadb(
 //   }
 // }
 
-async function deleteMetadatadb(Product) {
- try {
-   const metaDataQuery = `DELETE FROM metadata  WHERE "Product"=$1;`;
-   await poolpimd.query(metaDataQuery, [Product]);
- } catch (error) {
-  return {
-    error: true,
-    errorCode: 500,
-    errorMessage: `Error deleting MetaData: ${error}`,
-  };
- }
+async function deleteMetadatadb(product) {
+  try {
+    // Ensure the SQL query matches the actual column storing the product name
+    const metaDataQuery = `DELETE FROM metadata WHERE "product_name" = $1;`;
+    const result = await poolpimd.query(metaDataQuery, [product]);
+
+    // If no rows were deleted, handle it as an error
+    if (result.rowCount === 0) {
+      return {
+        error: true,
+        errorCode: 404,
+        errorMessage: `No metadata found for product: ${product}`,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      error: true,
+      errorCode: 500,
+      errorMessage: `Error deleting metadata: ${error.message || error}`,
+    };
+  }
 }
+
 
 async function deleteagencydb(agency_name) {
   try {
@@ -925,7 +939,7 @@ module.exports = {
   // updateProductDevdb,
   // updateProductDomdb,
   getagencyByIddb,
-  // getMetaDataByIddb,
+  getMetaDataByProductNamedb,
   // getProductByIddb,
   createMetadatadb,
   createagencydb,

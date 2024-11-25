@@ -1,64 +1,4 @@
-CREATE DATABASE esankhyiki;
-
-CREATE TABLE product IF NOT EXISTS(
-    id varchar(20) NOT NULL,
-    title varchar(80) NOT NULL,
-    count varchar(80) NOT NULL,
-    icon varchar(100000) NOT NULL,
-    period varchar(80) NOT NULL,
-    tooltip varchar(80) NOT NULL,
-    type varchar(80) NOT NULL,
-    url varchar(80) NOT NULL,
-    table varchar(80) NOT NULL,
-    swagger BOOLEAN NOT NULL,
-    viz varchar(80) NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE (id)
-);
-
-CREATE TABLE MetaData IF NOT EXISTS (
-    id SERIAL PRIMARY KEY,
-    product VARCHAR(60) NOT NULL,
-    title VARCHAR(60) NOT NULL,
-    agency_name VARCHAR(40) NOT NULL,
-    geography VARCHAR(80) NOT NULL,
-    frequency VARCHAR(40) NOT NULL,
-    timePeriod VARCHAR(40) NOT NULL,
-    dataSource VARCHAR(300) NOT NULL,
-    description VARCHAR(800) NOT NULL,
-    lastUpdateDate DATE NOT NULL,
-    futureRelease VARCHAR(40) NOT NULL,
-    basePeriod VARCHAR(60) NOT NULL,
-    keystatistics VARCHAR(300) NOT NULL,
-    NMDS VARCHAR(300) NOT NULL,
-    nmdslink VARCHAR(300) NOT NULL,
-    remarks VARCHAR(200) NOT NULL,
-    FOREIGN KEY (product) REFERENCES product(id),
-    UNIQUE (product)
-);
-
-CREATE TABLE agency IF NOT EXISTS(
-    agency_name varchar(20) NOT NULL,
-    name varchar(40) NOT NULL,
-    PRIMARY KEY (agency_name)
-);
-CREATE TABLE Productagency IF NOT EXISTS(
-    productId varchar(20) NOT NULL,
-    agency_name varchar(20) NOT NULL,
-    FOREIGN KEY (productId) REFERENCES product(id),
-    FOREIGN KEY (agency_name) REFERENCES agency(agency_name),
-    PRIMARY KEY (productId, agency_name)
-);
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE TABLE Users IF NOT EXISTS(
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username VARCHAR(40) NOT NULL UNIQUE,
-    password VARCHAR(300) NOT NULL,
-    -- pimd BOOLEAN
-    title  varchar(20) NOT NULL,
-    -- FOREIGN KEY (title) REFERENCES UserRetation(id)
-);
+CREATE DATABASE nmds_db;
 
 
 CREATE TABLE IF NOT EXISTS public.state
@@ -126,6 +66,8 @@ create table roles(
  canDelete boolean,
  canGrantPermission boolean
 )
+ALTER TABLE metadata 
+ALTER COLUMN product_id ADD GENERATED ALWAYS AS IDENTITY;
 
 -- "password": "CCUSER123!"
 -- INSERT INTO pimdusers(username, password,title) VALUES ('PIMD_user', '$2a$10$sJEW.LK10vwLPR2Id0NFLecgddzFsdcJPLIAmSZjVxQBEGAXM9e36','PIMD_user');

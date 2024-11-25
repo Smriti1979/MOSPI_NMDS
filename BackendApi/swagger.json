@@ -1,13 +1,13 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Esankhyiki Api",
+    "title": "NMDS Api",
     "version": "1.0.0",
     "description": "API for pimd user authentication, product management including product creation."
   },
   "servers": [
     {
-      "url": "http://127.0.0.0.1:3000",
+      "url": "http://localhost:3000",
       "description": "Local development server"
     },
     {
@@ -42,11 +42,11 @@
                 "properties": {
                   "username": {
                     "type": "string",
-                    "example": "pimd"
+                    "example": "PIMD_user"
                   },
                   "password": {
                     "type": "string",
-                    "example": "123456"
+                    "example": "PIMDUSER123"
                   }
                 },
                 "required": ["username", "password"]
@@ -136,13 +136,14 @@
             "schema": {
               "type": "object",
               "properties": {
-                "username": { "type": "string", "example": "pimd" },
-                "password": { "type": "string", "example": "123456" },
-                "title": { "type": "string", "example": "pimd" },
-                "name": { "type": "string", "example": "pimd" },
+                "username": { "type": "string", "example": "(Agency name)_user" },
+                "password": { "type": "string", "example": "(AGENCY_NAME)USER123" },
+                "title": { "type": "string", "example": "NODAL User" },
+                "name": { "type": "string", "example": "Your Name" },
                 "email": { "type": "string", "example": "xyz@gmail.com" },
-                "phno": { "type": "string", "example": "pimd" },
-                "address": { "type": "string", "example": "abcd 14/6" }
+                "phone": { "type": "string", "example": "1234567890" },
+                "address": { "type": "string", "example": "abcd 14/6, Gzb, U.P." },
+                "roleIds": { "type": "array", "example": [1] }
               },
               "required": ["username", "password"]
             }
@@ -270,141 +271,7 @@
       }
     }
   },
-"/api/pimd/meta/search": {
-    "get": {
-      "summary": "Search metadata",
-      "tags": ["Metadata"],
-      "description": "Search for metadata records based on query parameters.",
-      "parameters": [
-        {
-          "name": "version",
-          "in": "query",
-          "description": "Version of the metadata",
-          "required": false,
-          "schema": {
-            "type": "integer",
-            "example": 1
-          }
-        },
-        {
-          "name": "Product",
-          "in": "query",
-          "description": "Product associated with the metadata",
-          "required": false,
-          "schema": {
-            "type": "string",
-            "example": "ProductA"
-          }
-        },
-        {
-          "name": "latest",
-          "in": "query",
-          "description": "Whether the metadata is the latest version (true or false)",
-          "required": false,
-          "schema": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        {
-          "name": "user_id",
-          "in": "query",
-          "description": "ID of the user associated with the metadata",
-          "required": false,
-          "schema": {
-            "type": "integer",
-            "example": 123
-          }
-        },
-        {
-          "name": "title",
-          "in": "query",
-          "description": "Search by title in the metadata",
-          "required": false,
-          "schema": {
-            "type": "string",
-            "example": "Consumer"
-          }
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "Metadata records successfully fetched",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "version": { "type": "integer", "example": 1 },
-                        "Product": { "type": "string", "example": "ProductA" },
-                        "latest": { "type": "boolean", "example": true },
-                        "user_id": { "type": "integer", "example": 123 },
-                        "data": { "type": "object" },
-                        "createdDate": { "type": "string", "example": "2024-09-29T12:34:56Z" }
-                      }
-                    }
-                  },
-                  "msg": {
-                    "type": "string",
-                    "example": "meta data"
-                  },
-                  "statusCode": {
-                    "type": "boolean",
-                    "example": true
-                  }
-                }
-              }
-            }
-          }
-        },
-        "400": {
-          "description": "No metadata found",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "data": {
-                    "type": "array",
-                    "example": []
-                  },
-                  "msg": {
-                    "type": "string",
-                    "example": "data not found"
-                  },
-                  "statusCode": {
-                    "type": "boolean",
-                    "example": false
-                  }
-                }
-              }
-            }
-          }
-        },
-        "500": {
-          "description": "Internal server error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "error": {
-                    "type": "string",
-                    "example": "Unable to fetch data Error=some_error"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
+
 "/api/pimd/user/{username}": {
       "get": {
         "security": [
@@ -1168,13 +1035,9 @@
                   "agency_name": {
                     "type": "string",
                     "example": "NSS"
-                  },
-                  "name": {
-                    "type": "string",
-                    "example": "NSS"
                   }
                 },
-                "required": ["agency_name", "name"]
+                "required": ["agency_name"]
               }
             }
           }
@@ -1404,7 +1267,7 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "example": "New agency Name"
+                    "example": "New agency name"
                   }
                 },
                 "required": ["name"]
@@ -1425,7 +1288,7 @@
                       "properties": {
                         "name": {
                           "type": "string",
-                          "example": "New agency Name"
+                          "example": "New agency name"
                         }
                       }
                     },
@@ -1600,7 +1463,7 @@
               "properties": {
                 "Product": {
                   "type": "string",
-                  "description": "The product ID associated with the metadata ."
+                  "description": "The product name associated with the metadata ."
                 },
                 "data": {
                   "type": "json",
@@ -1608,20 +1471,10 @@
                 }
               },
               "example": {
-                "title": "",
-                "agency_name": "",
-                "Geography": "",
-                "Frequency": "",
-                "TimePeriod": "",
-                "DataSource": "",
-                "Description": "",
-                 "lastUpdateDate": "",
-                "FutureRelease": "",
-                "BasePeriod": "",
-                "Keystatistics": "",
-                "NMDS": "",
-                "nmdslink": "",
-                "remarks": ""
+                "Product_id":"",
+                "Product_name": "",
+                "agency_id": "",
+                "data" :""
               }
             }
           }
@@ -1694,14 +1547,14 @@
         "bearerAuth": []
       }
     ],
-    "summary": "Get Metadata by Product",
-    "description": "Retrieve metadata by product ID",
+    "summary": "Get Metadata by Product name",
+    "description": "Retrieve metadata by product name",
     "tags": ["Metadata"],
     "parameters": [
       {
         "name": "Product",
         "in": "path",
-        "description": "Product ID",
+        "description": "Product name",
         "required": true,
         "schema": {
           "type": "string"
@@ -1780,11 +1633,11 @@
       {
         "name": "Product",
         "in": "path",
-        "description": "The product ID for which metadata needs to be deleted.",
+        "description": "The product name for which metadata needs to be deleted.",
         "required": true,
         "schema": {
           "type": "string",
-          "example": "product_001"
+          "example": "ABC"
         }
       }
     ],
@@ -1865,7 +1718,7 @@
         "schema": {
           "type": "string"
         },
-        "description": "The product ID"
+        "description": "The product name"
       },
       {
         "name": "version",
@@ -1963,21 +1816,11 @@
               }
             },
             "example": {
-              "Product": "",
-              "title": "",
-              "agency_name": "",
-              "Geography": "",
-              "Frequency": "",
-              "TimePeriod": "",
-              "DataSource": "",
-              "Description": "",
-              "lastUpdateDate": "",
-              "FutureRelease": "",
-              "BasePeriod": "",
-              "Keystatistics": "",
-              "NMDS": "",
-              "nmdslink": "",
-              "remarks": ""
+              "agency-id": "",
+              "product_id": "",
+              "product_name": "",
+              "data": ""
+
             },
             "required": ["Product"]
           }
@@ -2102,7 +1945,7 @@
       "put": {
         "summary": "Assign a role to a user",
         "description": "Allows an authorized user with permission to grant roles to update another user's role.",
-        "tags": ["Users"],
+        "tags": ["User Management"],
         "security": [
           {
             "BearerAuth": []
@@ -2127,7 +1970,7 @@
                 "type": "object",
                 "properties": {
                   "roleId": {
-                    "type": "string",
+                    "type": ["integer"],
                     "description": "ID of the role to assign to the user"
                   }
                 },

@@ -11,7 +11,7 @@ const {
   createagency,
   createMetadata,
   // getProductById,
-  // getMetaDataById,
+  getMetaDataByProductName,
   getagencyById,
   // updateProduct,
   updateagency,
@@ -69,10 +69,11 @@ router.route("/pimd/agency/:agency_name").put(verifyJWT, updateagency);
 
 
 // router.route("/pimd/metadata/version").get(verifyJWT, getMetaDataByVersion); 
-// router.route("/pimd/metadata/:Product").get(getMetaDataById);
+router.route("/pimd/metadata/:Product").get(verifyJWT, getMetaDataByProductName);
 
 // router.route("/pimd/metadata/:product_id").put(verifyJWT, updatedMetadata); 
-// router.route("/pimd/metadata/:product_id").delete(verifyJWT, deleteMetadata); 
+router.route("/pimd/metadata/:product").delete(verifyJWT, deleteMetadata);
+
 
 router.route("/pimd/metadata").post(verifyJWT, createMetadata); 
 router.route("/pimd/metadata").get(getMetaData);
