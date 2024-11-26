@@ -21,11 +21,10 @@ const verifyJWT = async (req, res, next) => {
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    console.log("Decoded Token:", decodedToken); // Debugging
 
     const usersql = "SELECT * FROM users WHERE id=$1"; // Match your table schema
     const userDetail = await poolauth.query(usersql, [decodedToken._id]);
-    console.log("User Details Query Result:", userDetail.rows); // Debugging
+  
 
     const user = userDetail.rows[0];
 

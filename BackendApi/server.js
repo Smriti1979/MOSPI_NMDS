@@ -64,9 +64,3 @@ app.get("/", (req, res) => {
   res.writeHead(200, { 'Content-Type': 'html' });
   res.end(index);
 });
-
-
-
-
-
-

@@ -1238,107 +1238,110 @@
           }
         }
       },
-      "put": {
-        "summary": "Update agency",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "tags": ["Agencies"],
-        "description": "Update an existing agency. Only pimd and domain users can edit agencys.",
-        "parameters": [
-          {
-            "name": "agency_name",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "agency_name_001"
+        "put": {
+          "summary": "Update agency",
+          "security": [
+            {
+              "bearerAuth": []
             }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
+          ],
+          "tags": ["Agencies"],
+          "description": "Update an existing agency. Only PIMD users and users with role ID 1 or 2 can edit agencies.",
+          "parameters": [
+            {
+              "name": "agency_name",
+              "in": "path",
+              "required": true,
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "example": "New agency name"
+                "type": "string",
+                "example": "Old Agency Name"
+              },
+              "description": "The current name of the agency to update."
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agency_name": {
+                      "type": "string",
+                      "example": "New Agency Name",
+                      "description": "The new name for the agency."
+                    }
+                  },
+                  "required": ["agency_name"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Agency updated successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "agency_name": {
+                            "type": "string",
+                            "example": "New Agency Name"
+                          }
+                        }
+                      },
+                      "msg": {
+                        "type": "string",
+                        "example": "Agency updated successfully"
+                      },
+                      "statusCode": {
+                        "type": "boolean",
+                        "example": true
+                      }
+                    }
                   }
-                },
-                "required": ["name"]
+                }
+              }
+            },
+            "405": {
+              "description": "Invalid input or unauthorized user",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "example": "agency_name is required or unauthorized access"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Internal server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "example": "Error in updating agency data: [error details]"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "agency updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string",
-                          "example": "New agency name"
-                        }
-                      }
-                    },
-                    "msg": {
-                      "type": "string",
-                      "example": "agency updated successfully"
-                    },
-                    "statusCode": {
-                      "type": "boolean",
-                      "example": true
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "405": {
-            "description": "Invalid input or unauthorized user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "agency_name and name are required"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Error in Updating agency data: [error details]"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
+      
       "delete": {
       "summary": "Delete agency by agency_name",
       "tags": ["Agencies"],

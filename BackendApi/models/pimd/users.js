@@ -1,65 +1,81 @@
 module.exports = (sequelize, DataTypes) => {
-  const users = sequelize.define(
-    "users",
-    {
-      id: {
+    const User = sequelize.define('User', {
+      user_id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true,
         primaryKey: true,
+        autoIncrement: true,
+        allowNull: false,
+      },
+      agency_id: {
+        type: DataTypes.INTEGER,
         allowNull: false,
       },
       username: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       password: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      title: {
+      usertype: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      agencyid: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-      },
-      name: {
-        type: DataTypes.STRING,
-      },
-      newuser:{
+      newuser: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
+        allowNull: false,
+      },
+      phone: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       email: {
         type: DataTypes.STRING,
-      },
-      phno: {
-        type: DataTypes.STRING,
+        allowNull: false,
       },
       address: {
-        type: DataTypes.TEXT,
+        type: DataTypes.STRING,
+        allowNull: false,
       },
-      createdDate: {
+      is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        allowNull: false,
+      },
+      created_by: {
+        type: DataTypes.STRING,
+        defaultValue: 'System',
+      },
+      updated_by: {
+        type: DataTypes.STRING,
+        defaultValue: 'System',
+      },
+      created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
-    },
-    {
-      tableName: "pimdUsers",
-      timestamps: false,
-      freezeTableName: true,
-    }
-  );
-
-  users.associate = (models) => {
-    users.belongsToMany(models.role, {
-      through: "userroles",
-      foreignKey: "userId",
-      as: "roles",
+      updated_at: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      }
+    }, {
+      timestamps: false, // You can use createdAt and updatedAt manually
+      tableName: 'users',
     });
+  
+    // Association with Agency model
+    User.associate = (models) => {
+      User.belongsTo(models.Agency, {
+        foreignKey: 'agency_id',
+      });
+    };
+  
+    return User;
   };
   
-  return users;
-};
