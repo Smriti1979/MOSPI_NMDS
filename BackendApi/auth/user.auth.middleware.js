@@ -10,6 +10,7 @@ const poolauth = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT, // Default PostgreSQL port
 });
+
 const verifyJWT = async (req, res, next) => {
   try {
     const token =
@@ -22,9 +23,8 @@ const verifyJWT = async (req, res, next) => {
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    const usersql = "SELECT * FROM users WHERE id=$1"; // Match your table schema
-    const userDetail = await poolauth.query(usersql, [decodedToken._id]);
-  
+    const usersql = "SELECT * FROM users WHERE user_id=$1"; // Match your table schema
+    const userDetail = await poolauth.query(usersql, [decodedToken._user_id]);
 
     const user = userDetail.rows[0];
 
@@ -34,8 +34,8 @@ const verifyJWT = async (req, res, next) => {
 
     req.user = {
       username: user.username,
-      id: user.id,
-      title: user.title,
+      user_id: user.user_id,
+      usertype: user.usertype,
     };
 
     next();

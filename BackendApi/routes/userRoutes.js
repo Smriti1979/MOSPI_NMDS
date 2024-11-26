@@ -7,6 +7,7 @@ const { verifyJWT } = require("../auth/user.auth.middleware.js");
 const pimdController = require("../controllers/pimdController.js");
 const {
   signin,
+  changePassword,
   createagency,
   updateagency,
   deleteagency,
@@ -41,10 +42,13 @@ app.use(express.json());
 router.route("/signin").post(signin);
 
 //USER
+
 router.route("/pimd/user").post(verifyJWT,createUser); 
 router.route("/pimd/user").get(verifyJWT,getUser);  
 router.route("/pimd/user/:username").delete(verifyJWT,deleteUser); 
 router.route("/pimd/user/:username").put(verifyJWT,updateUser); 
+
+router.route("/user/changepassword").put(changePassword);
 
 //AGENCY
 router.route("/pimd/agency").post(verifyJWT, createagency);

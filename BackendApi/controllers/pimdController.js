@@ -7,6 +7,7 @@ const { poolpimd } = require('../DbQuery/dbOperationpimd');
 // var AES = require("crypto-js/aes");
 const {
   EmailValidation,
+  updatePassword,
   createagencydb,
   getagencydb,
   updateagencydb,
@@ -54,10 +55,16 @@ const signin = async (req, res) => {
 
     // Wait for the email validation process to complete
     const UsersDetail = await EmailValidation(username);
-
     // Check if UsersDetail is null or has an error field
     if (!UsersDetail || UsersDetail.error === true) {
       return res.status(403).json({ error: `User does not exist` });
+    }
+
+    // **Check if the newuser column is true**
+    if (UsersDetail.newuser) {
+      return res.status(403).json({ 
+        error: 'New user detected. Please reset your password.' 
+      });
     }
 
     // Check if the password exists in UsersDetail
@@ -75,7 +82,7 @@ const signin = async (req, res) => {
     // Generate the access token for the user
     const pimdAccessToken = generateAccessToken({
       username: username,
-      id: UsersDetail.id,
+      user_id: UsersDetail.user_id,
     });
 
     // Set up the cookie options
@@ -93,7 +100,7 @@ const signin = async (req, res) => {
     return res.status(200).send({
       data: {
         username: username,
-        role: UsersDetail.title,
+        role: UsersDetail.usertype,
         token: pimdAccessToken
       },
       userverified: true,
@@ -108,30 +115,74 @@ const signin = async (req, res) => {
   }
 };
 
+
+const changePassword = async (req, res) => {
+  const { username, newPassword } = req.body;
+
+  try {
+    // Validate input
+    if (!username || !newPassword) {
+      return res.status(400).json({ error: "Both username and newPassword are required." });
+    }
+
+    // Fetch the user based on the username
+    const userQuery = "SELECT * FROM users WHERE username = $1";
+    const userResult = await poolpimd.query(userQuery, [username]);
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Hash the new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update the password and set newuser to false
+    const updateQuery = `
+      UPDATE users
+      SET password = $1, newuser = false
+      WHERE username = $2
+      RETURNING user_id, username;
+    `;
+    const updateResult = await poolpimd.query(updateQuery, [hashedPassword, username]);
+    const updatedUser = updateResult.rows[0];
+
+    if (!updatedUser) {
+      return res.status(500).json({ error: "Failed to update the password." });
+    }
+
+    return res.status(200).json({
+      message: "Password updated successfully.",
+      user: { user_id: updatedUser.user_id, username: updatedUser.username },
+    });
+  } catch (error) {
+    console.error("Error changing password:", error.message);
+    return res.status(500).json({ error: "Server error during password change." });
+  }
+};
+
+
 //USER
 
 const createUser = async (req, res) => {
-  const { username, password, title, name, email, phone, address, roleIds } = req.body;
+  const { agency_id, username, password, usertype, name, email, phone, address } = req.body;
   const user = req.user;
 
   // Check required fields
-  if (!title) {
-    return res.status(400).json({ error: "Title is required" });
+  if (!usertype) {
+    return res.status(400).json({ error: "usertype is required" });
   }
 
-  // Only users with title "PIMD User" can create new users
-  if (user.title !== "PIMD User") {
-    return res.status(405).json({ error: "Only PIMD Users can create a user" });
+  // Only users with usertype "PIMD_USER" can create new users
+  if (user.usertype !== "PIMD_USER") {
+    return res.status(405).json({ error: "Only PIMD_USER can create a user" });
   }
 
-  // Ensure roles are provided
-  if (!roleIds || !Array.isArray(roleIds) || roleIds.length === 0) {
-    return res.status(400).json({ error: "At least one role is required" });
-  }
 
   try {
     // Call the database function to create the user and assign roles
-    const newUser = await createUserdb(username, password, title, name, email, phone, address, roleIds);
+    const newUser = await createUserdb(agency_id, username, password, usertype, name, email, phone, address);
 
     // Check for errors from createUserdb
     if (newUser.error) {
@@ -152,10 +203,10 @@ const createUser = async (req, res) => {
 };
 const getUser=async(req,res)=>{
   const user = req.user;
-    if (user.title !== "PIMD User") {
+    if (user.usertype !== "PIMD_USER") {
       return res
         .status(405)
-        .json({ error: `Only PIMD User can get the users` });
+        .json({ error: `Only PIMD_USER can get the users` });
     }
   try {
 
@@ -178,20 +229,20 @@ const getUser=async(req,res)=>{
 }
 const updateUser = async (req, res) => {
   let { username } = req.params;
-  let { title, name, email, phno, address, password } = req.body; // Password is now part of the request body
+  let { usertype, name, email, phno, address, password } = req.body; // Password is now part of the request body
   const user = req.user;
 
-  if (user.title !== "PIMD User") {
-    return res.status(405).json({ error: `Only PIMD User can update the user` });
+  if (user.usertype !== "PIMD_USER") {
+    return res.status(405).json({ error: `Only PIMD_USER can update the user` });
   }
 
   try {
-    const updatedUser = await updateUserDb(username, title, name, email, phno, address, password); // Pass password to the update function
+    const updatedUser = await updateUserDb(username, usertype, name, email, phno, address, password); // Pass password to the update function
     if (updatedUser.error == true) {
       return res.status(404).json({ error: updatedUser.errorMessage });
     }
     return res.status(200).send({
-      data: {username, title, name, email, phno, address,},
+      data: {username, usertype, name, email, phno, address,},
       msg: "User updated successfully",
       statusCode: true,
     });
@@ -202,11 +253,11 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   let { username } = req.params;
   const user = req.user;
-  if (user.title !== "PIMD User"){
-    return res.status(405).json({ error: `Only PIMD User can delete the user` });
+  if (user.usertype !== "PIMD_USER"){
+    return res.status(405).json({ error: `Only PIMD_USER can delete the user` });
   }
   if (username == "PIMD_user"){
-    return res.status(405).json({ error: `you can not delete PIMD user` });
+    return res.status(405).json({ error: `you can not delete PIMD_USER` });
   }
   try {
     const deletedUser = await deleteUserDb(username);
@@ -228,13 +279,11 @@ const createagency = async (req, res) => {
   const { agency_name} = req.body;
   try {
     const user = req.user;
-    const userRoles = await getUserRoles(user.id);  
 
-    const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
-    if (user.title !== "PIMD User" && !hasRole1or2) {
+    if (user.usertype !== "PIMD_USER") {
       return res
         .status(405)
-        .json({ error: `Only PIMD User or users with roleId 1 or 2 can create agency` });
+        .json({ error: `Only PIMD_USER or users with roleId 1 or 2 can create agency` });
     }
    
     const result = await createagencydb(agency_name);
@@ -258,15 +307,10 @@ const getagency = async (req, res) => {
   try {
     const user = req.user;
 
-
-    // Check if the user has roleId 1 or 2 or is a "PIMD User"
-    const userRoles = await getUserRoles(user.id);  // Fetch user roles from your database
-
-    const hasRole1or2or3 = userRoles.includes(1) || userRoles.includes(2) || userRoles.includes(3);
-    if (user.title !== "PIMD User" && !hasRole1or2or3) {
+    if (user.usertype !== "PIMD_USER" ) {
       return res
         .status(405)
-        .json({ error: `Only PIMD User or users with roleId 1 or 2 or 3 can get agency` });
+        .json({ error: `Only PIMD user or Nodal user can get agency` });
     }
 
     const agency = await getagencydb();
@@ -291,13 +335,11 @@ const updateagency = async (req, res) => {
   const { agency_name: new_agency_name } = req.body; // New agency name from the request body
   const user = req.user;
 
-  // Check if the user has appropriate roles or is a PIMD User
-  const userRoles = await getUserRoles(user.id);
-  const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
-  if (user.title !== "PIMD User" && !hasRole1or2) {
+  // Check if the user has appropriate roles or is a PIMD_USER
+  if (user.usertype !== "PIMD_USER") {
     return res
       .status(405)
-      .json({ error: `Only PIMD User or users with roleId 1 or 2 can update the agency` });
+      .json({ error: `Only PIMD_USER can update the agency` });
   }
 
   // Validate inputs
@@ -330,15 +372,11 @@ const updateagency = async (req, res) => {
 const deleteagency = async (req, res) => {
   const { agency_name } = req.params;
   const user = req.user;
- 
-  const userRoles = await getUserRoles(user.id);
-    
-  const hasRole1 = userRoles.includes(1);
   
-  if (user.title !== "PIMD User" && !hasRole1) {
+  if (user.usertype !== "PIMD_USER" ) {
     return res
       .status(405)
-      .json({ error: `Only PIMD User or User with role 1 can delete Agency` });
+      .json({ error: `Only PIMD_USER can delete Agency` });
   }
   if (!agency_name) {
     return res.status(405).json({ error: `Agency name does not exist` });
@@ -372,10 +410,10 @@ const deleteagency = async (req, res) => {
 //     // Check user roles for permission
 //     const userRoles = await getUserRoles(user.id);  
 //     const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
-//     if (user.title !== "PIMD User" && !hasRole1or2) {
+//     if (user.usertype !== "PIMD_USER" && !hasRole1or2) {
 //       return res
 //         .status(405)
-//         .json({ error: `Only PIMD User or users with roleId 1 or 2 can create the Metadata` });
+//         .json({ error: `Only PIMD_USER or users with roleId 1 or 2 can create the Metadata` });
 //     }
 
 //     // Exclude predefined fields and store the rest in the `data` column as JSON
@@ -541,7 +579,7 @@ const deleteagency = async (req, res) => {
 
 //     const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
 
-//     if(user.title=="PIMD User" || hasRole1or2 ){
+//     if(user.usertype=="PIMD_USER" || hasRole1or2 ){
 //       const result = await updateMetadatadb(
 //         Product,
 //         metadata,
@@ -580,10 +618,10 @@ const deleteagency = async (req, res) => {
 //     const hasRole1 = userRoles.includes(1);
     
 //     // Permission Check
-//     if (user.title !== "PIMD User" && !hasRole1) {
+//     if (user.usertype !== "PIMD_USER" && !hasRole1) {
 //       return res
 //         .status(403)
-//         .json({ error: "Only PIMD User or User with role 1 can delete the METADATA" });
+//         .json({ error: "Only PIMD_USER or User with role 1 can delete the METADATA" });
 //     }
     
 //     // Check if product is provided
@@ -654,7 +692,7 @@ exports.login = async (req, res) => {
 
 module.exports = {
   signin,
-
+  changePassword,
   createUser,
   getUser,
   updateUser,

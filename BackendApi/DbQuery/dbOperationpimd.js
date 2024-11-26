@@ -27,9 +27,20 @@ async function EmailValidation(username) {
   return result.rows[0];
 }
 
+async function updatePassword(userId, hashedPassword){
+  const query = `
+    UPDATE users
+    SET password = $1, newuser = false
+    WHERE user_id = $2
+    RETURNING user_id, username;
+  `;
+
+  const result = await poolpimd.query(query, [hashedPassword, userId]);
+  return result.rows[0]; // Returns updated user details or undefined if no match
+};
 
 
-async function createUserdb(username, password, title, name, email, phone, address, roleIds) {
+async function createUserdb(agency_id, username, password, usertype, name, email, phone, address) {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Start a transaction to ensure atomicity in creating a user and assigning roles
@@ -39,28 +50,14 @@ async function createUserdb(username, password, title, name, email, phone, addre
 
     // Insert the new user
     const insertUserQuery = `
-      INSERT INTO users(username, password, title, name, email, phone, address, "created_by")
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, username, title, name, email, phone, address, "created_by"
+      INSERT INTO users(agency_id, username, password, usertype, name, email, phone, address)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING agency_id, username, password, usertype, name, email, phone, address
     `;
     const userResult = await client.query(insertUserQuery, [
-      username, hashedPassword, title, name, email, phone, address, new Date()
+      agency_id, username, hashedPassword, usertype, name, email, phone, address
     ]);
 
     const newUser = userResult.rows[0];
-
-    // Check if the roles are provided
-    if (!roleIds || roleIds.length === 0) {
-      throw new Error("User creation failed: at least one role must be assigned.");
-    }
-
-    // Insert roles for the user in the userroles table
-    const insertrolePromises = roleIds.map(roleId => {
-      const insertUserroleQuery = `
-        INSERT INTO userroles(user_id, role_id) VALUES($1, $2)
-      `;
-      return client.query(insertUserroleQuery, [newUser.id, roleId]);
-    });
-    await Promise.all(insertrolePromises);
 
     await client.query('COMMIT');
     return newUser;
@@ -74,7 +71,7 @@ async function createUserdb(username, password, title, name, email, phone, addre
   }
 }
 async function  getUserdb(){
- const user=await poolpimd.query(`SELECT username, title, name, email, phone, address,"created_by"  FROM users `)
+ const user=await poolpimd.query(`SELECT username, usertype, name, email, phone, address,"created_by"  FROM users `)
 if (user.rows.length === 0) {
   return {
     error: true,
@@ -84,7 +81,7 @@ if (user.rows.length === 0) {
 }
  return user.rows;
 }
-async function updateUserDb(username, title, name, email, phno, address, password) {
+async function updateUserDb(username, usertype, name, email, phno, address, password) {
   let hashedPassword;
   
   if (password) {
@@ -92,7 +89,7 @@ async function updateUserDb(username, title, name, email, phno, address, passwor
   }
 
   const query = `UPDATE pimdusers SET 
-                  title = $1, 
+                  usertype = $1, 
                   name = $2, 
                   email = $3, 
                   phno = $4, 
@@ -102,7 +99,7 @@ async function updateUserDb(username, title, name, email, phno, address, passwor
                 RETURNING *`;
 
   const user = await poolpimd.query(query, [
-    title, name, email, phno, address, hashedPassword, username
+    usertype, name, email, phno, address, hashedPassword, username
   ]);
 
   if (user.rows.length === 0) {
@@ -131,10 +128,10 @@ async function deleteUserDb(username) {
 
 async function createagencydb(agency_name) {
   try {
-    const sqlQuery = `INSERT INTO agency(agency_name) VALUES($1)`;
+    const sqlQuery = `INSERT INTO agencies (agency_name) VALUES($1)`;
     await poolpimd.query(sqlQuery, [agency_name]);
     const result = await poolpimd.query(
-      "SELECT * FROM agency WHERE agency_name=$1",
+      "SELECT * FROM agencies WHERE agency_name=$1",
       [agency_name]
     );
     if (result.rows.length === 0) {
@@ -155,7 +152,7 @@ async function createagencydb(agency_name) {
 }
 async function getagencydb() {
   try {
-    const getQuery = `SELECT * FROM agency `;
+    const getQuery = `SELECT * FROM agencies `;
     const data = await poolpimd.query(getQuery);
     if (data.rows.length == 0) {
       return {
@@ -240,7 +237,7 @@ async function deleteagencydb(agency_name) {
 
 // async function createProductdb(
 //   id,
-//   title,
+//   usertype,
 //   count,
 //   icon,
 //   period,
@@ -267,10 +264,10 @@ async function deleteagencydb(agency_name) {
 
 //     await poolpimd.query("BEGIN");
 
-//     const productQuery = `INSERT INTO product(id, title, count, icon, period, tooltip, type, url, "table", swagger, viz, "authorId", "createdDate") VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`;
+//     const productQuery = `INSERT INTO product(id, usertype, count, icon, period, tooltip, type, url, "table", swagger, viz, "authorId", "createdDate") VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`;
 //     await poolpimd.query(productQuery, [
 //       id,
-//       title,
+//       usertype,
 //       count,
 //       icon,
 //       period,
@@ -539,7 +536,7 @@ async function deleteagencydb(agency_name) {
 // }
 // async function updateProductDomdb(
 //   id,
-//   title,
+//   usertype,
 //   count,
 //   period,
 //   tooltip,
@@ -552,7 +549,7 @@ async function deleteagencydb(agency_name) {
 
 //     // Update product details
 //     const productQuery = `UPDATE product SET 
-//           title = $1, 
+//           usertype = $1, 
 //           count = $2, 
 //           period = $3, 
 //           tooltip = $4, 
@@ -560,7 +557,7 @@ async function deleteagencydb(agency_name) {
 //           viz = $6 
 //           WHERE id = $7`;
 //     await poolpimd.query(productQuery, [
-//       title,
+//       usertype,
 //       count,
 //       period,
 //       tooltip,
@@ -630,7 +627,7 @@ async function deleteagencydb(agency_name) {
 
 // async function updateProductDevdb(
 //   id,
-//   title,
+//   usertype,
 //   count,
 //   icon,
 //   period,
@@ -647,7 +644,7 @@ async function deleteagencydb(agency_name) {
 
 //     // Update product details
 //     const productQuery = `UPDATE product SET 
-//             title = $1, 
+//             usertype = $1, 
 //             count = $2, 
 //             icon = $3, 
 //             period = $4, 
@@ -660,7 +657,7 @@ async function deleteagencydb(agency_name) {
 //             WHERE id = $11`;
 
 //     await poolpimd.query(productQuery, [
-//       title,
+//       usertype,
 //       count,
 //       icon,
 //       period,
@@ -851,7 +848,9 @@ async function deleteagencydb(agency_name) {
 
 module.exports = {
   poolpimd,
+
   EmailValidation,
+  updatePassword,
   createUserdb,
   getUserdb,
   updateUserDb,

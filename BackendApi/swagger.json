@@ -3,7 +3,7 @@
   "info": {
     "title": "NMDS Api",
     "version": "1.0.0",
-    "description": "API for pimd user authentication, product management including product creation."
+    "description": "API for PIMD_USER authentication, product management including product creation."
   },
   "servers": [
     {
@@ -18,7 +18,7 @@
   "paths": {
     "/api/signin": {
       "post": {
-        "summary": "Sign in PIMD user",
+        "summary": "Sign in PIMD_USER",
         "tags": ["Signin"],
         "parameters": [
           {
@@ -32,7 +32,7 @@
             }
           }
         ],
-        "description": "Authenticate an pimd user by validating username and password and return an access token.",
+        "description": "Authenticate an PIMD_USER by validating username and password and return an access token.",
         "requestBody": {
           "required": true,
           "content": {
@@ -136,14 +136,14 @@
             "schema": {
               "type": "object",
               "properties": {
+                "agency_id": { "type": "string", "example": "1" },
                 "username": { "type": "string", "example": "(Agency name)_user" },
-                "password": { "type": "string", "example": "(AGENCY_NAME)USER123" },
-                "title": { "type": "string", "example": "NODAL User" },
                 "name": { "type": "string", "example": "Your Name" },
+                "password": { "type": "string", "example": "(AGENCY_NAME)USER123" },
+                "usertype": { "type": "string", "example": "NODAL User" },
                 "email": { "type": "string", "example": "xyz@gmail.com" },
                 "phone": { "type": "string", "example": "1234567890" },
-                "address": { "type": "string", "example": "abcd 14/6, Gzb, U.P." },
-                "roleIds": { "type": "array", "example": [1] }
+                "address": { "type": "string", "example": "abcd 14/6, Gzb, U.P." }
               },
               "required": ["username", "password"]
             }
@@ -943,7 +943,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Delete an existing product. Only pimd users can delete products.",
+        "description": "Delete an existing product. Only PIMD_USER can delete products.",
         "parameters": [
           {
             "name": "id",
@@ -1019,7 +1019,7 @@
       "post": {
         "summary": "Create agency",
         "tags": ["Agencies"],
-        "description": "Create a new agency in the system. Only pimd users can create agencys.",
+        "description": "Create a new agency in the system. Only PIMD_USER can create agencys.",
         "security": [
           {
             "bearerAuth": []
@@ -1087,7 +1087,7 @@
             }
           },
           "403": {
-            "description": "Only pimd users can create agencys",
+            "description": "Only PIMD_USER can create agencys",
             "content": {
               "application/json": {
                 "schema": {
@@ -1246,7 +1246,7 @@
             }
           ],
           "tags": ["Agencies"],
-          "description": "Update an existing agency. Only PIMD users and users with role ID 1 or 2 can edit agencies.",
+          "description": "Update an existing agency. Only PIMD_USER and users with role ID 1 or 2 can edit agencies.",
           "parameters": [
             {
               "name": "agency_name",
@@ -1345,7 +1345,7 @@
       "delete": {
       "summary": "Delete agency by agency_name",
       "tags": ["Agencies"],
-      "description": "Delete a agency by its agency_name. Only pimd users can delete agencys.",
+      "description": "Delete a agency by its agency_name. Only PIMD_USER can delete agencys.",
       "security": [
         {
           "bearerAuth": []
@@ -1440,7 +1440,7 @@
 
     "put": {
       "summary": "Update Metadata",
-      "description": "Update metadata for a product. Only pimd users or the owner of the product can update metadata.",
+      "description": "Update metadata for a product. Only PIMD_USER or the owner of the product can update metadata.",
       "tags": ["Metadata"],
       "security": [
         {
@@ -1800,7 +1800,7 @@
           }
         ],
     "summary": "Create Metadata",
-    "description": "Create metadata for a product. Only pimd users can create metadata.",
+    "description": "Create metadata for a product. Only PIMD_USER can create metadata.",
     "tags": ["Metadata"],
     "requestBody": {
       "required": true,
@@ -1856,7 +1856,7 @@
         }
       },
       "405": {
-        "description": "Only pimd users can create metadata",
+        "description": "Only PIMD_USER can create metadata",
         "content": {
           "application/json": {
             "schema": {
@@ -1864,7 +1864,7 @@
               "properties": {
                 "error": {
                   "type": "string",
-                  "example": "Only pimd users can create metadata."
+                  "example": "Only PIMD_USER can create metadata."
                 }
               }
             }
@@ -1944,78 +1944,144 @@
   
   
 },
-"/api/pimd/user/{username}/roles": {
-      "patch": {
-        "summary": "Assign a role to a user",
-        "description": "Allows an authorized user with permission to grant roles to update another user's role.",
-        "tags": ["User Management"],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "username",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "username of the user whose role is being updated"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "roleId": {
-                    "type": ["integer"],
-                    "description": "ID of the role to assign to the user"
-                  }
-                },
-                "required": ["roleId"]
+"/api/user/changepassword": {
+  "put": {
+    "tags": ["User Management"],
+    "summary": "Change user password",
+    "description": "Allows users to change their password by providing the current password for validation. Updates the `password` field and sets the `newuser` flag to `false`.",
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "username": {
+                "type": "string",
+                "description": "The user's username.",
+                "example": "NSS_user"
+              },
+              "newPassword": {
+                "type": "string",
+                "description": "The new password to set.",
+                "example": "newSecurePassword456"
               }
-            }
+            },
+            "required": ["currentPassword", "newPassword"]
           }
-        },
-        "responses": {
-          "200": {
-            "description": "role updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Password updated successfully.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Password updated successfully."
+                },
+                "user": {
                   "type": "object",
                   "properties": {
-                    "message": {
+                    "user_id": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "username": {
                       "type": "string",
-                      "example": "role updated successfully"
+                      "example": "john_doe"
                     }
                   }
                 }
               }
             }
-          },
-          "404": {
-            "description": "User not found"
-          },
-          "403": {
-            "description": "Forbidden - User does not have permission to assign roles"
+          }
+        }
+      },
+      "400": {
+        "description": "Bad request due to missing or invalid parameters.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Both currentPassword and newPassword are required."
+                }
+              }
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Unauthorized request due to incorrect current password.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Current password is incorrect."
+                }
+              }
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "User with the provided current password not found.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "User with the provided current password not found."
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error during password change.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Server error during password change."
+                }
+              }
+            }
           }
         }
       }
     }
-  },
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    }
   }
+}
+},
+"components": {
+"securitySchemes": {
+  "BearerAuth": {
+    "type": "http",
+    "scheme": "bearer",
+    "bearerFormat": "JWT"
+  }
+}
+}
 }

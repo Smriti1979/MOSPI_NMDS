@@ -1,7 +1,7 @@
 [
   {
     "Product": "cpi",
-    "title": "Consumer Price Index (CPI)",
+    "usertype": "Consumer Price Index (CPI)",
     "agency_name": "Price Statistics",
     "Geography": "All India, Rural, Urban, States",
     "Frequency": "Monthly",
@@ -18,7 +18,7 @@
   },
   {
     "Product": "IIP",
-    "title": "Index Of Industrial Production (IIP)",
+    "usertype": "Index Of Industrial Production (IIP)",
     "agency_name": "Industrial Statistics",
     "Geography": "All India, Rural, Urban, States",
     "Frequency": "Monthly",
@@ -34,7 +34,7 @@
   },
   {
     "Product": "NAS",
-    "title": "National Accounts Statistics (NAS)",
+    "usertype": "National Accounts Statistics (NAS)",
     "agency_name": "National Accounts Statistics",
     "Geography": "All India, States",
     "Frequency": "Annual",
@@ -50,7 +50,7 @@
   },
   {
     "Product": "ASI",
-    "title": "Annual Survey of Industries (ASI)",
+    "usertype": "Annual Survey of Industries (ASI)",
     "agency_name": "Industrial Statistics",
     "Geography": "All India",
     "Frequency": "Annual",

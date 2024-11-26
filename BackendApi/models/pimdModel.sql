@@ -32,7 +32,7 @@ create table users(
  username varchar(40) not null unique,
  name varchar(20) not null,
  password varchar(300) not null,
- title varchar(300) not null,
+ usertype varchar(300) not null,
  newuser boolean,
  phone varchar(15),
  email varchar(100),
@@ -56,7 +56,7 @@ create table roles(
 
 insert into agencies (agency_name) values ('PIMD')
 -- "password":"PIMDUSER123"
-INSERT INTO users(agency_id, username, name, password, usertype, phone, email, address) VALUES ('1', 'PIMD_user', 'Ram', '$2a$04$We8XpsbPqR/K0NPUm8uIk.BKCSBjzUaVZRDIgATVbAlBlkgZDosZq','PIMD_User', '1234567890', 'pimd@gmail.com', 'ABC Colony');
+INSERT INTO users(agency_id, username, name, password, usertype, phone, email, address, newuser) VALUES ('1', 'PIMD_user', 'Ram', '$2a$04$We8XpsbPqR/K0NPUm8uIk.BKCSBjzUaVZRDIgATVbAlBlkgZDosZq','PIMD_User', '1234567890', 'pimd@gmail.com', 'ABC Colony', 'false');
 
 
 
