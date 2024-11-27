@@ -54,9 +54,9 @@ create table roles(
  canGrantPermission boolean
 )
 
-insert into agencies (agency_name) values ('PIMD')
+INSERT INTO agencies (agency_name) VALUES ('PIMD')
 -- "password":"PIMDUSER123"
-INSERT INTO users(agency_id, username, name, password, usertype, phone, email, address, newuser) VALUES ('1', 'PIMD_user', 'Ram', '$2a$04$We8XpsbPqR/K0NPUm8uIk.BKCSBjzUaVZRDIgATVbAlBlkgZDosZq','PIMD_User', '1234567890', 'pimd@gmail.com', 'ABC Colony', 'false');
+INSERT INTO users(agency_id, username, name, password, usertype, phone, email, address, newuser) VALUES ('1', 'PIMD_user', 'Ram', '$2a$04$We8XpsbPqR/K0NPUm8uIk.BKCSBjzUaVZRDIgATVbAlBlkgZDosZq','PIMD_USER', '1234567890', 'pimd@gmail.com', 'ABC Colony', 'false');
 
 
 

@@ -70,17 +70,48 @@ async function createUserdb(agency_id, username, password, usertype, name, email
     client.release();
   }
 }
-async function  getUserdb(){
- const user=await poolpimd.query(`SELECT username, usertype, name, email, phone, address,"created_by"  FROM users `)
-if (user.rows.length === 0) {
-  return {
-    error: true,
-    errorCode: 405,
-    errorMessage: `unable to get user`,
-  };
+async function getUserdb() {
+  try {
+    const query = `
+      SELECT 
+        users.username, 
+        users.agency_id, 
+        users.usertype, 
+        users.name, 
+        users.email, 
+        users.phone, 
+        users.address, 
+        users.created_by, 
+        agencies.agency_name
+      FROM 
+        users
+      INNER JOIN 
+        agencies 
+      ON 
+        users.agency_id = agencies.agency_id
+    `;
+
+    const user = await poolpimd.query(query);
+
+    if (user.rows.length === 0) {
+      return {
+        error: true,
+        errorCode: 405,
+        errorMessage: "Unable to get user",
+      };
+    }
+
+    return user.rows;
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    return {
+      error: true,
+      errorCode: 500,
+      errorMessage: "Internal server error",
+    };
+  }
 }
- return user.rows;
-}
+
 async function updateUserDb(username, usertype, name, email, phno, address, password) {
   let hashedPassword;
   
