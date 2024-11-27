@@ -17,108 +17,116 @@
   ],
   "paths": {
     "/api/signin": {
-      "post": {
-        "summary": "Sign in PIMD_USER",
-        "tags": ["Signin"],
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-From-Swagger",
-            "user-agent":"swagger",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "true"
-            }
+  "post": {
+    "summary": "Sign in PIMD_USER",
+    "tags": ["Signin"],
+    "parameters": [
+      {
+        "in": "header",
+        "name": "X-From-Swagger",
+        "description": "Indicates that the request originates from Swagger or Postman for testing purposes.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "default": "true"
+        }
+      }
+    ],
+    "description": "Authenticate a PIMD_USER by validating username and password and return an access token.",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "username": {
+                "type": "string",
+                "example": "PIMD_user"
+              },
+              "password": {
+                "type": "string",
+                "example": "PIMDUSER123"
+              }
+            },
+            "required": ["username", "password"]
           }
-        ],
-        "description": "Authenticate an PIMD_USER by validating username and password and return an access token.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string",
-                    "example": "PIMD_user"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "PIMDUSER123"
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "User successfully authenticated",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string",
+                      "example": "pimd"
+                    },
+                    "usertype": {
+                      "type": "string",
+                      "example": "PIMD_USER"
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5..."
+                    }
                   }
                 },
-                "required": ["username", "password"]
+                "msg": {
+                  "type": "string",
+                  "example": "UserVerified"
+                },
+                "statusCode": {
+                  "type": "boolean",
+                  "example": true
+                }
               }
             }
           }
-        },
-        "responses": {
-          "200": {
-            "description": "User successfully authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "username": {
-                          "type": "string",
-                          "example": "pimd"
-                        }
-                      }
-                    },
-                    "msg": {
-                      "type": "string",
-                      "example": "UserVerified"
-                    },
-                    "statusCode": {
-                      "type": "boolean",
-                      "example": true
-                    }
-                  }
+        }
+      },
+      "403": {
+        "description": "Unauthorized access due to invalid credentials or account status.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "New user detected. Please reset your password."
                 }
               }
             }
-          },
-          "403": {
-            "description": "Invalid username or password",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Required correct password"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Error in signIn User"
-                    }
-                  }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Internal server error: Database connection failed."
                 }
               }
             }
           }
         }
       }
-    },
+    }
+  }
+},
 "/api/pimd/user": {
     "post": {
       "security": [

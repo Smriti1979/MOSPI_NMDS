@@ -2,13 +2,13 @@
 const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
 
-// DB connection for ASI
 const poolauth = new Pool({
   user: process.env.DB_USERNAME,
   host: process.env.DB_HOST,
   database: process.env.DB_DATABASETPM,
+  dialect: process.env.DB_DIALECT,
   password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT, // Default PostgreSQL port
+  port: process.env.DB_PORT, 
 });
 
 const verifyJWT = async (req, res, next) => {
@@ -21,7 +21,18 @@ const verifyJWT = async (req, res, next) => {
       return res.status(401).json({ error: "Unauthorized request: Missing token" });
     }
 
-    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({ error: "Token has expired" });
+      }
+      if (error.name === "JsonWebTokenError") {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      throw error;
+    }
 
     const usersql = "SELECT * FROM users WHERE user_id=$1"; // Match your table schema
     const userDetail = await poolauth.query(usersql, [decodedToken._user_id]);
@@ -32,16 +43,18 @@ const verifyJWT = async (req, res, next) => {
       return res.status(403).json({ error: "Invalid PIMD Access Token" });
     }
 
+    // Attach user information to the request object
     req.user = {
       username: user.username,
       user_id: user.user_id,
       usertype: user.usertype,
     };
 
-    next();
+    next(); // Proceed to the next middleware
   } catch (error) {
     console.error("JWT Verification Error:", error.message); // Debugging
-    res.status(500).json({ error: "Server error during user verification" });
+    return res.status(500).json({ error: "Server error during user verification" });
   }
 };
+
 module.exports = { verifyJWT };
