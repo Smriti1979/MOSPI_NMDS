@@ -48,44 +48,37 @@ const signin = async (req, res) => {
   try {
     const key = process.env.PASSWORD_KEY;
 
-    // Decrypt the password if needed (you can uncomment this part when necessary)
     if (!userAgents && !userAgent.includes('Postman')) {
-      // password = AES.decrypt(password, key);
+      // Uncomment and handle decryption properly if needed
+      // password = AES.decrypt(password, key).toString(CryptoJS.enc.Utf8);
     }
 
-    // Wait for the email validation process to complete
+    // Validate email and fetch user details
     const UsersDetail = await EmailValidation(username);
-    // Check if UsersDetail is null or has an error field
-    if (!UsersDetail || UsersDetail.error === true) {
-      return res.status(403).json({ error: `User does not exist` });
+    if (!UsersDetail || UsersDetail.error) {
+      return res.status(403).json({ error: 'Invalid credentials' });
     }
 
-    // **Check if the newuser column is true**
     if (UsersDetail.newuser) {
       return res.status(403).json({ 
         error: 'New user detected. Please reset your password.' 
       });
     }
 
-    // Check if the password exists in UsersDetail
     if (!UsersDetail.password) {
-      return res.status(403).json({ error: 'Password not found for the user' });
+      return res.status(403).json({ error: 'Invalid credentials' });
     }
 
-    // Compare the password with the hash stored in the database
     const correctpassword = await bcrypt.compare(password, UsersDetail.password);
-
     if (!correctpassword) {
-      return res.status(403).json({ error: `Incorrect password` });
+      return res.status(403).json({ error: 'Invalid credentials' });
     }
 
-    // Generate the access token for the user
     const pimdAccessToken = generateAccessToken({
-      username: username,
+      username: UsersDetail.username,
       user_id: UsersDetail.user_id,
     });
 
-    // Set up the cookie options
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -93,27 +86,23 @@ const signin = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     };
 
-    // Set the cookie with the access token
     res.cookie('pimdAccessToken', pimdAccessToken, cookieOptions);
 
-    // Send the response with the user data and token
-    return res.status(200).send({
+    return res.status(200).json({
       data: {
-        username: username,
-        role: UsersDetail.usertype,
-        token: pimdAccessToken
+        username,
+        usertype : UsersDetail.usertype,
+        token: pimdAccessToken,
       },
       userverified: true,
       statusCode: true,
     });
   } catch (error) {
-    // Log the error for debugging
     console.error(error);
-
-    // Return a response with a 500 status code and the error message
-    return res.status(500).json({ error: `Error in signIn User: ${error.message}` });
+    return res.status(500).json({ error: 'An error occurred during sign-in.' });
   }
 };
+
 
 
 const changePassword = async (req, res) => {
@@ -283,7 +272,7 @@ const createagency = async (req, res) => {
     if (user.usertype !== "PIMD_USER") {
       return res
         .status(405)
-        .json({ error: `Only PIMD_USER or users with roleId 1 or 2 can create agency` });
+        .json({ error: `Only PIMD_USER can create agency` });
     }
    
     const result = await createagencydb(agency_name);
