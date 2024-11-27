@@ -112,25 +112,19 @@ async function getUserdb() {
   }
 }
 
-async function updateUserDb(username, usertype, name, email, phno, address, password) {
-  let hashedPassword;
-  
-  if (password) {
-    hashedPassword = await bcrypt.hash(password, 10); // Hash the new password if provided
-  }
-
-  const query = `UPDATE pimdusers SET 
-                  usertype = $1, 
-                  name = $2, 
-                  email = $3, 
-                  phno = $4, 
-                  address = $5,
-                  password = COALESCE($6, password) -- Only update password if a new one is provided
-                WHERE username = $7 
-                RETURNING *`;
+async function updateUserDb(username, name, email, phone, address) {
+  const query = `
+    UPDATE users SET 
+      username = $1, 
+      name = $2, 
+      email = $3,
+      phone = $4,
+      address = $5
+    WHERE username = $6
+    RETURNING *`;
 
   const user = await poolpimd.query(query, [
-    usertype, name, email, phno, address, hashedPassword, username
+    username, name, email, phone, address, username  // Added username to the query parameters
   ]);
 
   if (user.rows.length === 0) {
@@ -140,8 +134,9 @@ async function updateUserDb(username, usertype, name, email, phno, address, pass
       errorMessage: `User not found`,
     };
   }
-  return user.rows[0];
+  return user.rows[0]; // Return the updated user data
 }
+
 async function deleteUserDb(username) {
   const query = `DELETE FROM users WHERE username = $1 RETURNING *`;
   const user = await poolpimd.query(query, [username]);
@@ -264,6 +259,37 @@ async function deleteagencydb(agency_name) {
   }
 }
 
+async function getMetadataByAgencyIddb(agencyId) {
+  try {
+    const query = `
+      SELECT * 
+      FROM metadata 
+      WHERE agency_id = $1
+    `;
+
+    const result = await poolpimd.query(query, [agencyId]);
+
+    if (result.rows.length === 0) {
+      return {
+        error: true,
+        errorCode: 404,
+        errorMessage: "No metadata found for this agency.",
+      };
+    }
+
+    return {
+      error: false,
+      data: result.rows,
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      error: true,
+      errorCode: 500,
+      errorMessage: "Internal server error.",
+    };
+  }
+}
 
 
 // async function createProductdb(
@@ -891,6 +917,8 @@ module.exports = {
   getagencydb,
   updateagencydb,
   deleteagencydb,
+
+  // getMetadataByAgencyIddb
 
   // deleteMetadatadb,
   // deleteProductdb,

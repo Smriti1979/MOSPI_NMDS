@@ -173,7 +173,7 @@
                       "title": { "type": "string", "example": "pimd" },
                       "name": { "type": "string", "example": "pimd" },
                       "email": { "type": "string", "example": "xyz@gmail.com" },
-                      "phno": { "type": "string", "example": "pimd" },
+                      "phone": { "type": "string", "example": "pimd" },
                       "address": { "type": "string", "example": "abcd 14/6" }
                     }
                   },
@@ -238,7 +238,7 @@
                         "title": { "type": "string", "example": "pimd" },
                         "name": { "type": "string", "example": "pimd" },
                         "email": { "type": "string", "example": "xyz@gmail.com" },
-                        "phno": { "type": "string", "example": "pimd" },
+                        "phone": { "type": "string", "example": "pimd" },
                         "address": { "type": "string", "example": "abcd 14/6" }
                       }
                     }
@@ -316,7 +316,7 @@
                         "title": { "type": "string", "example": "pimd" },
                         "name": { "type": "string", "example": "pimd" },
                         "email": { "type": "string", "example": "xyz@gmail.com" },
-                        "phno": { "type": "string", "example": "pimd" },
+                        "phone": { "type": "string", "example": "pimd" },
                         "address": { "type": "string", "example": "abcd 14/6" }
                       }
                     },
@@ -448,7 +448,7 @@
                   "title": { "type": "string", "example": "pimd" },
                   "name": { "type": "string", "example": "pimd" },
                   "email": { "type": "string", "example": "xyz@gmail.com" },
-                  "phno": { "type": "string", "example": "1234567890" },
+                  "phone": { "type": "string", "example": "1234567890" },
                   "address": { "type": "string", "example": "abcd 14/6" },
                   "password": { "type": "string", "example": "newpassword" }
                 }
@@ -471,7 +471,7 @@
                         "title": { "type": "string", "example": "pimd" },
                         "name": { "type": "string", "example": "pimd" },
                         "email": { "type": "string", "example": "xyz@gmail.com" },
-                        "phno": { "type": "string", "example": "1234567890" },
+                        "phone": { "type": "string", "example": "1234567890" },
                         "address": { "type": "string", "example": "abcd 14/6" }
                       }
                     },
@@ -511,6 +511,8 @@
         }
       }
     },
+
+    
     "/api/pimd/product": {
       "post": {
         "security": [

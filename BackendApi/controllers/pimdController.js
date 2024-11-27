@@ -17,6 +17,8 @@ const {
   getUserdb,
   updateUserDb,
   deleteUserDb,
+
+  // getMetadataByAgencyIddb,
  
   // createProductdb,
   // getProductByIddb,
@@ -218,27 +220,32 @@ const getUser=async(req,res)=>{
 }
 const updateUser = async (req, res) => {
   let { username } = req.params;
-  let { usertype, name, email, phno, address, password } = req.body; // Password is now part of the request body
+  let { name, email, phone, address } = req.body;
   const user = req.user;
 
+  // Check if the user is allowed to perform the update (PIMD_USER type)
   if (user.usertype !== "PIMD_USER") {
     return res.status(405).json({ error: `Only PIMD_USER can update the user` });
   }
 
   try {
-    const updatedUser = await updateUserDb(username, usertype, name, email, phno, address, password); // Pass password to the update function
-    if (updatedUser.error == true) {
-      return res.status(404).json({ error: updatedUser.errorMessage });
+    const updatedUser = await updateUserDb(username, name, email, phone, address);
+
+    if (updatedUser.error) {
+      return res.status(updatedUser.errorCode || 500).json({ error: updatedUser.errorMessage });
     }
-    return res.status(200).send({
-      data: {username, usertype, name, email, phno, address,},
+
+    // Return the updated user details
+    return res.status(200).json({
+      data: updatedUser,  // Send the updated user object
       msg: "User updated successfully",
       statusCode: true,
     });
   } catch (error) {
-    return res.status(500).json({ error: `Error updating user: ${error}` });
+    return res.status(500).json({ error: `Error updating user: ${error.message || error}` });
   }
 };
+
 const deleteUser = async (req, res) => {
   let { username } = req.params;
   const user = req.user;
@@ -261,6 +268,43 @@ const deleteUser = async (req, res) => {
     return res.status(500).json({ error: `Error deleting user: ${error}` });
   }
 };
+
+
+// const getMetadata = async (req, res) => {
+//   try {
+//     // Extract the user's agency_id from the authenticated user data
+//     const { agency_id } = req.user;
+
+//     if (!agency_id) {
+//       return res.status(400).json({
+//         error: true,
+//         message: "Agency ID not provided.",
+//       });
+//     }
+
+//     // Fetch metadata for the agency
+//     const metadataResponse = await getMetadataByAgencyIddb(agency_id);
+
+//     if (metadataResponse.error) {
+//       return res
+//         .status(metadataResponse.errorCode)
+//         .json({ error: true, message: metadataResponse.errorMessage });
+//     }
+
+//     // Send the retrieved metadata
+//     return res.status(200).json({
+//       error: false,
+//       data: metadataResponse.data,
+//     });
+//   } catch (error) {
+//     console.error("Controller error:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "An unexpected error occurred.",
+//     });
+//   }
+// };
+
 
 //AGENCY
 
@@ -691,6 +735,8 @@ module.exports = {
   getagency,
   updateagency,
   deleteagency,
+
+  // getMetadata,
 
   // getMetaDataByProductName,
   // updateProduct,
