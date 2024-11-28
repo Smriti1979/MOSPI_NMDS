@@ -198,11 +198,11 @@ async function getagencydb() {
 }
 async function updateagencydb(agency_name, new_agency_name) {
   // Update the agency_name in the agency table
-  const updateQuery = `UPDATE agency SET agency_name=$1 WHERE agency_name=$2`;
+  const updateQuery = `UPDATE agencies SET agency_name=$1 WHERE agency_name=$2`;
   await poolpimd.query(updateQuery, [new_agency_name, agency_name]);
 
   // Fetch the updated record to return as a response
-  const getQuery = `SELECT * FROM agency WHERE agency_name=$1`;
+  const getQuery = `SELECT * FROM agencies WHERE agency_name=$1`;
   const data = await poolpimd.query(getQuery, [new_agency_name]);
 
   if (data.rows.length === 0) {
