@@ -450,7 +450,7 @@
                   "email": { "type": "string", "example": "xyz@gmail.com" },
                   "phone": { "type": "string", "example": "1234567890" },
                   "address": { "type": "string", "example": "abcd 14/6" },
-                  "password": { "type": "string", "example": "newpassword" }
+                  "password": { "type": "string", "example": "password" }
                 }
               }
             }
@@ -1976,13 +1976,13 @@
                 "description": "The user's username.",
                 "example": "NSS_user"
               },
-              "newPassword": {
+              "password": {
                 "type": "string",
                 "description": "The new password to set.",
                 "example": "newSecurePassword456"
               }
             },
-            "required": ["currentPassword", "newPassword"]
+            "required": ["currentPassword", "password"]
           }
         }
       }
@@ -2026,7 +2026,7 @@
               "properties": {
                 "error": {
                   "type": "string",
-                  "example": "Both currentPassword and newPassword are required."
+                  "example": "Both currentPassword and password are required."
                 }
               }
             }

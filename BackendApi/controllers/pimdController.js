@@ -108,12 +108,12 @@ const signin = async (req, res) => {
 
 
 const changePassword = async (req, res) => {
-  const { username, newPassword } = req.body;
+  const { username, password } = req.body;
 
   try {
     // Validate input
-    if (!username || !newPassword) {
-      return res.status(400).json({ error: "Both username and newPassword are required." });
+    if (!username || !password) {
+      return res.status(400).json({ error: "Both username and password are required." });
     }
 
     // Fetch the user based on the username
@@ -127,7 +127,7 @@ const changePassword = async (req, res) => {
 
     // Hash the new password
     const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Update the password and set newuser to false
     const updateQuery = `
