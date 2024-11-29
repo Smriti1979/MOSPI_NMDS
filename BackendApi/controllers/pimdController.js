@@ -63,7 +63,7 @@ const signin = async (req, res) => {
 
     if (UsersDetail.newuser) {
       return res.status(403).json({ 
-        error: 'New user detected. Please reset your password.' 
+        userverified: false 
       });
     }
 
