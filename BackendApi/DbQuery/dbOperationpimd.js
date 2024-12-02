@@ -27,7 +27,7 @@ async function EmailValidation(username) {
   return result.rows[0];
 }
 
-async function updatePassword(userId, hashedPassword){
+async function updatePassword(userId, hashedPassword) {
   const query = `
     UPDATE users
     SET password = $1, newuser = false
@@ -37,7 +37,7 @@ async function updatePassword(userId, hashedPassword){
 
   const result = await poolpimd.query(query, [hashedPassword, userId]);
   return result.rows[0]; // Returns updated user details or undefined if no match
-};
+}
 
 
 async function createUserdb(agency_id, username, password, usertype, name, email, phone, address) {
@@ -216,37 +216,43 @@ async function updateagencydb(agency_name, new_agency_name) {
 }
 async function deleteagencydb(agency_name) {
   try {
-    // // Start a transaction
-    // await poolpimd.query("BEGIN");
+    // Start a transaction
+    await poolpimd.query("BEGIN");
 
-    // Get associated products from the productagency table
-    const getProductsQuery = `SELECT "product_id" FROM metadata WHERE agency_id = (SELECT agency_id FROM agency WHERE agency_name = $1)`;
-    const productsResult = await poolpimd.query(getProductsQuery, [agency_name]);
-    const productIds = productsResult.rows.map((row) => row.product_id);
+    // Fetch the agency_id for the given agency_name
+    const getAgencyIdQuery = `SELECT agency_id FROM agencies WHERE agency_name = $1`;
+    const agencyResult = await poolpimd.query(getAgencyIdQuery, [agency_name]);
 
-    // Remove associated entries from the productagency table
-    const deleteProductagencyQuery = `DELETE FROM agency WHERE agency_name = $1`;
-    await poolpimd.query(deleteProductagencyQuery, [agency_name]);
-
-    if (productIds.length > 0) {
+    if (agencyResult.rows.length === 0) {
+      // Rollback if the agency does not exist
       await poolpimd.query("ROLLBACK");
       return {
         error: true,
-        errorCode: 500,
-        errorMessage: `Error deleting agency Product already exist`,
+        errorCode: 404,
+        errorMessage: `Agency with name "${agency_name}" not found.`,
       };
     }
 
-    // Finally, remove the agency itself
-    const deleteagencyQuery = `DELETE FROM agency WHERE agency_name = $1`;
-    await poolpimd.query(deleteagencyQuery, [agency_name]);
+    const agencyId = agencyResult.rows[0].agency_id;
+
+    // Delete associated metadata
+    const deleteMetadataQuery = `DELETE FROM metadata WHERE agency_id = $1`;
+    await poolpimd.query(deleteMetadataQuery, [agencyId]);
+
+    // Delete associated users
+    const deleteUsersQuery = `DELETE FROM users WHERE agency_id = $1`;
+    await poolpimd.query(deleteUsersQuery, [agencyId]);
+
+    // Delete the agency
+    const deleteAgencyQuery = `DELETE FROM agency WHERE agency_name = $1`;
+    await poolpimd.query(deleteAgencyQuery, [agency_name]);
 
     // Commit the transaction
     await poolpimd.query("COMMIT");
 
     return {
       success: true,
-      message: `agency and associated products deleted successfully.`,
+      message: `Agency and all associated records deleted successfully.`,
     };
   } catch (error) {
     // Rollback transaction in case of an error
@@ -254,11 +260,95 @@ async function deleteagencydb(agency_name) {
     return {
       error: true,
       errorCode: 500,
-      errorMessage: `Error deleting agency: ${error}`,
+      errorMessage: `Error deleting agency: ${error.message}`,
     };
   }
 }
+async function createMetadatadb({ agency_id, product_name, data, released_data_link, created_by }) {
+  try {
+    let metadataId;
+    let version;
 
+    // Step 1: Check if the product already exists
+    const existingProductQuery = `
+      SELECT metadata_id, version FROM metadata
+      WHERE agency_id = $1 AND product_name = $2
+      ORDER BY version DESC
+      LIMIT 1;
+    `;
+
+    const existingProductResult = await poolpimd.query(existingProductQuery, [agency_id, product_name]);
+
+    if (existingProductResult.rows.length > 0) {
+      // Product exists, reuse the metadata_id and increment the version
+      metadataId = existingProductResult.rows[0].metadata_id;
+      version = existingProductResult.rows[0].version + 1; // Increment version
+    } else {
+      // Product is new, find the max metadata_id and set version to 1
+      const maxMetadataQuery = `
+        SELECT MAX(metadata_id) AS max_metadata_id FROM metadata;
+      `;
+
+      const maxMetadataResult = await poolpimd.query(maxMetadataQuery);
+
+      const maxMetadataId = maxMetadataResult.rows[0].max_metadata_id || 0; // Default to 0 if no records exist
+      metadataId = maxMetadataId + 1; // Increment for the new product
+      version = 1; // Start version at 1 for new products
+    }
+
+    // Step 2: Ensure the `latest_version` is set to false for previous metadata of the same product
+    const updateQuery = `
+      UPDATE metadata
+      SET latest_version = false
+      WHERE agency_id = $1 AND product_name = $2 AND latest_version = true;
+    `;
+
+    await poolpimd.query(updateQuery, [agency_id, product_name]);
+
+    // Step 3: Insert the new metadata record with `latest_version = true`
+    const insertQuery = `
+      INSERT INTO metadata (
+        metadata_id,
+        agency_id,
+        product_name,
+        data,
+        released_data_link,
+        created_by,
+        created_at,
+        latest_version,
+        version
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8)
+      RETURNING *;
+    `;
+
+    const result = await poolpimd.query(insertQuery, [
+      metadataId,
+      agency_id,
+      product_name,
+      data,
+      released_data_link,
+      created_by,
+      new Date(),
+      version,
+    ]);
+
+    // Handle case where no rows are inserted
+    if (result.rows.length === 0) {
+      return {
+        error: true,
+        errorMessage: "Failed to create metadata.",
+      };
+    }
+
+    return result.rows[0]; // Return the newly created metadata
+  } catch (error) {
+    console.error("Error in createMetadatadb:", error);
+    return {
+      error: true,
+      errorMessage: `Error in createMetadatadb: ${error.message}`,
+    };
+  }
+}
 async function getMetadataByAgencyIddb(agencyId) {
   try {
     const query = `
@@ -292,194 +382,8 @@ async function getMetadataByAgencyIddb(agencyId) {
 }
 
 
-// async function createProductdb(
-//   id,
-//   usertype,
-//   count,
-//   icon,
-//   period,
-//   tooltip,
-//   type,
-//   url,
-//   table,
-//   swagger,
-//   viz,
-//   agency_name,
-//   authorId,
-//   userRoles // Added userRoles parameter
-// ) {
-//   try {
-//     // Check if the user has roleId 1 or 2
-//     const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
-//     if (!hasRole1or2) {
-//       return {
-//         error: true,
-//         errorCode: 405,
-//         errorMessage: `User doesn't have permission to create a product`
-//       };
-//     }
-
-//     await poolpimd.query("BEGIN");
-
-//     const productQuery = `INSERT INTO product(id, usertype, count, icon, period, tooltip, type, url, "table", swagger, viz, "authorId", "createdDate") VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`;
-//     await poolpimd.query(productQuery, [
-//       id,
-//       usertype,
-//       count,
-//       icon,
-//       period,
-//       tooltip,
-//       type,
-//       url,
-//       table,
-//       swagger,
-//       viz,
-//       authorId,
-//       new Date()
-//     ]);
-
-//     const categories = agency_name.split(",").map((cat) => cat.trim());
-
-//     for (const cat of categories) {
-//       const agency_nameExistsQuery = `SELECT 1 FROM agency WHERE agency_name = $1`;
-//       const agency_nameExistsResult = await poolpimd.query(agency_nameExistsQuery, [
-//         cat,
-//       ]);
-
-//       if (agency_nameExistsResult.rows.length === 0) {
-//         return {
-//           error: true,
-//           errorCode: 405,
-//           errorMessage: `agency_name '${cat}' not found in agency table`,
-//         };
-//       }
-
-//       const productagencyQuery = `INSERT INTO productagency("productId", agency_name) VALUES($1, $2)`;
-//       await poolpimd.query(productagencyQuery, [id, cat]);
-//     }
-
-//     await poolpimd.query("COMMIT");
-//     return categories;
-//   } catch (error) {
-//     await poolpimd.query("ROLLBACK");
-//     console.error(error);
-//     return {
-//       error: true,
-//       errorCode: 500,
-//       errorMessage: `Problem in db unable to create product: ${error}`,
-//     };
-//   }
-// }
 
 
-
-// async function createMetadatadb({ agency_id, product_id, product_name, data, user_created_id, status, created_by }) {
-//   try {
-//     // Step 1: Update previous records for this product_id to set latest=false
-//     const updateQuery = `
-//       UPDATE metadata 
-//       SET latest=false 
-//       WHERE "product_id" = $1 AND latest=true;
-//     `;
-
-//     await poolpimd.query(updateQuery, [product_id]);
-
-//     // Step 2: Insert new metadata with latest=true
-//     const metaQuery = `
-//       INSERT INTO metadata(
-//         "agency_id", 
-//         "product_id", 
-//         "product_name", 
-//         data, 
-//         "user_created_id", 
-//         status, 
-//         "created_by", 
-//         "created_at", 
-//         "updated_at", 
-//         latest
-//       ) 
-//       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $8, true)
-//       RETURNING *;
-//     `;
-
-//     const result = await poolpimd.query(metaQuery, [
-//       agency_id,
-//       product_id,
-//       product_name,
-//       data,
-//       user_created_id,
-//       status,
-//       created_by,
-//       new Date()
-//     ]);
-
-//     // If no row is inserted or returned, handle it as an error
-//     if (result.rows.length == 0) {
-//       return {
-//         error: true,
-//         errorCode: 400,
-//         errorMessage: 'Error in creating metadata',
-//       };
-//     }
-
-//     return result.rows[0]; // Return the newly inserted metadata
-//   } catch (error) {
-//     return {
-//       error: true,
-//       errorCode: 500,
-//       errorMessage: `Error in createMetadatadb: ${error.message}`,
-//     };
-//   }
-// }
-
-// async function getProductdb() {
-//   try {
-//     const getQuery = `SELECT * FROM product`;
-//     const productResult = await poolpimd.query(getQuery);
-//     if (productResult.rows.length === 0) {
-//       return {
-//         error: true,
-//         errorCode: 400,
-//         errorMessage: `Unable to fetch data from ProductTable`,
-//       };
-//     }
-//     return productResult.rows;
-//   } catch (error) {
-//     return {
-//       error: true,
-//       errorCode: 400,
-//       errorMessage: `Unable to fetch data from ProductTable=${error}`,
-//     };
-//   }
-// }
-
-// async function getProductByIddb(productId) {
-//   try {
-//     const getQuery = `SELECT * FROM product WHERE id = $1`;
-//     const productResult = await poolpimd.query(getQuery, [productId]);
-//     if (productResult.rows.length === 0) {
-//       return {
-//         error: true,
-//         errorCode: 400,
-//         errorMessage: `Unable to fetch data from ProductTable`,
-//       };
-//     }
-//     const getQueryagency_name = `SELECT agency_name FROM productagency WHERE "productId" = $1`;
-//     const categoriesResult = await poolpimd.query(getQueryagency_name, [
-//       productId,
-//     ]);
-//     const product = productResult.rows[0];
-//     const categories = categoriesResult.rows.map((row) => row.agency_name);
-//     product["agency_name"] = categories;
-//     return product;
-//   } catch (error) {
-//     return {
-//       error: true,
-//       errorCode: 400,
-//       errorMessage: `Unable to fetch data from ProductTable=${error}`,
-//     };
-//   }
-// }
 
 // async function getMetaDatadb() {
 //   try {
@@ -591,194 +495,6 @@ async function getMetadataByAgencyIddb(agencyId) {
 //   }
 //   return data.rows;
 // }
-// async function updateProductDomdb(
-//   id,
-//   usertype,
-//   count,
-//   period,
-//   tooltip,
-//   type,
-//   viz,
-//   agency_name
-// ) {
-//   try {
-//     await poolpimd.query("BEGIN");
-
-//     // Update product details
-//     const productQuery = `UPDATE product SET 
-//           usertype = $1, 
-//           count = $2, 
-//           period = $3, 
-//           tooltip = $4, 
-//           type = $5, 
-//           viz = $6 
-//           WHERE id = $7`;
-//     await poolpimd.query(productQuery, [
-//       usertype,
-//       count,
-//       period,
-//       tooltip,
-//       type,
-//       viz,
-//       id,
-//     ]);
-
-//     // Handle categories
-//     const categories = agency_name.split(",").map((cat) => cat.trim());
-//     const existingCategories = await poolpimd.query(
-//       `SELECT agency_name FROM productagency WHERE "productId" = $1`,
-//       [id]
-//     );
-//     const existingagency_nameList = existingCategories.rows.map(
-//       (row) => row.agency_name
-//     );
-
-//     // Add new categories
-//     for (const cat of categories) {
-//       if (!existingagency_nameList.includes(cat)) {
-//         const agency_nameExistsQuery = `SELECT 1 FROM agency WHERE agency_name = $1`;
-//         const agency_nameExistsResult = await poolpimd.query(
-//           agency_nameExistsQuery,
-//           [cat]
-//         );
-
-//         if (agency_nameExistsResult.rows.length === 0) {
-//           return {
-//             error: true,
-//             errorCode: 402,
-//             errorMessage: `agency_name '${cat}' not found in agency table`,
-//           };
-//         }
-//         const productagencyQuery = `INSERT INTO productagency("productId", agency_name) VALUES($1, $2)`;
-//         await poolpimd.query(productagencyQuery, [id, cat]);
-//       }
-//     }
-
-//     const getQuery = `SELECT * FROM product WHERE id = $1`;
-//     const productResult = await poolpimd.query(getQuery, [id]);
-//     if (productResult.rows.length === 0) {
-//       return {
-//         error: true,
-//         errorCode: 402,
-//         errorMessage: `Unable to fetch data from ProductTable`,
-//       };
-//     }
-
-//     const getQueryagency_name = `SELECT agency_name FROM productagency WHERE "productId" = $1`;
-//     const categoriesResult = await poolpimd.query(getQueryagency_name, [id]);
-//     const product = productResult.rows[0];
-//     const Allagency_name = categoriesResult.rows.map((row) => row.agency_name);
-//     product["agency_name"] = Allagency_name;
-
-//     await poolpimd.query("COMMIT");
-//     return product;
-//   } catch (error) {
-//     await poolpimd.query("ROLLBACK");
-//     return {
-//       error: true,
-//       errorCode: 402,
-//       errorMessage: error,
-//     };
-//   }
-// }
-
-// async function updateProductDevdb(
-//   id,
-//   usertype,
-//   count,
-//   icon,
-//   period,
-//   tooltip,
-//   type,
-//   url,
-//   table,
-//   swagger,
-//   viz,
-//   agency_name
-// ) {
-//   try {
-//     await poolpimd.query("BEGIN");
-
-//     // Update product details
-//     const productQuery = `UPDATE product SET 
-//             usertype = $1, 
-//             count = $2, 
-//             icon = $3, 
-//             period = $4, 
-//             tooltip = $5, 
-//             type = $6, 
-//             url = $7, 
-//             "table" = $8, 
-//             swagger = $9, 
-//             viz = $10 
-//             WHERE id = $11`;
-
-//     await poolpimd.query(productQuery, [
-//       usertype,
-//       count,
-//       icon,
-//       period,
-//       tooltip,
-//       type,
-//       url,
-//       table,
-//       swagger,
-//       viz,
-//       id,
-//     ]);
-
-//     // Handle categories
-//     const categories = agency_name.split(",").map((cat) => cat.trim());
-//     const existingCategories = await poolpimd.query(
-//       `SELECT agency_name FROM productagency WHERE "productId" = $1`,
-//       [id]
-//     );
-//     const existingagency_nameList = existingCategories.rows.map(
-//       (row) => row.agency_name
-//     );
-
-//     // Add new categories
-//     for (const cat of categories) {
-//       if (!existingagency_nameList.includes(cat)) {
-//         const agency_nameExistsQuery = `SELECT 1 FROM agency WHERE agency_name = $1`;
-//         const agency_nameExistsResult = await poolpimd.query(
-//           agency_nameExistsQuery,
-//           [cat]
-//         );
-
-//         if (agency_nameExistsResult.rows.length === 0) {
-//           return {
-//             error: true,
-//             errorCode: 402,
-//             errorMessage: `agency_name '${cat}' not found in agency table`,
-//           };
-//         }
-//         const productagencyQuery = `INSERT INTO productagency("productId", agency_name) VALUES($1, $2)`;
-//         await poolpimd.query(productagencyQuery, [id, cat]);
-//       }
-//     }
-//     const getQuery = `SELECT * FROM product WHERE id = $1`;
-//     const productResult = await poolpimd.query(getQuery, [id]);
-//     if (productResult.rows.length === 0) {
-//       return {
-//         error: true,
-//         errorCode: 402,
-//         errorMessage: `Unable to fetch data from ProductTable`,
-//       };
-//     }
-
-//     const getQueryagency_name = `SELECT agency_name FROM productagency WHERE "productId" = $1`;
-//     const categoriesResult = await poolpimd.query(getQueryagency_name, [id]);
-//     const product = productResult.rows[0];
-//     const Allagency_name = categoriesResult.rows.map((row) => row.agency_name);
-//     product["agency_name"] = Allagency_name;
-
-//     await poolpimd.query("COMMIT");
-//     return product;
-//   } catch (error) {
-//     await poolpimd.query("ROLLBACK");
-//   }
-// }
 
 
 
@@ -836,22 +552,6 @@ async function getMetadataByAgencyIddb(agencyId) {
 //   }
 // }
 
-// async function deleteProductdb(id) {
-//   try {
-//     const productQuery = `DELETE FROM product  WHERE id=$1;`;
-//     const metaDataQuery = `DELETE FROM metadata  WHERE "Product"=$1;`;
-//     const agency_nameQuery = `DELETE FROM productagency  WHERE "productId"=$1;`;
-//     await poolpimd.query(metaDataQuery, [id]);
-//     await poolpimd.query(agency_nameQuery, [id]);
-//     await poolpimd.query(productQuery, [id]);
-//   } catch (error) {
-//     return {
-//       error: true,
-//       errorCode: 500,
-//       errorMessage: `Error deleting product: ${error}`,
-//     };
-//   }
-// }
 
 // async function deleteMetadatadb(product) {
 //   try {
@@ -918,24 +618,18 @@ module.exports = {
   updateagencydb,
   deleteagencydb,
 
+  createMetadatadb
+
   // getMetadataByAgencyIddb
 
   // deleteMetadatadb,
-  // deleteProductdb,
   // updateMetadataDevdb,
   // updateMetadataDomdb,
   // updateMetadatadb,
   // getMetaDataByVersionP,
   // getMetaDataByVersionPV,
-  // updateProductDevdb,
-  // updateProductDomdb,
   // getagencyByIddb,
-  // getMetaDataByProductNamedb,
-  // getProductByIddb,
-  // createMetadatadb,
-  // createProductdb,
   // getMetaDatadb,
-  // getProductdb,
   // searchMetaDatadb,
   // getMetadataByAgencydb
 };

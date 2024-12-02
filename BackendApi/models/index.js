@@ -27,7 +27,7 @@ db.sequelize = sequelize;
 
 db.users = require("./pimd/users")(sequelize, DataTypes);
 db.agencies = require("./pimd/agencies")(sequelize, DataTypes);
-
+db.metadata = require("./pimd/metadata")(sequelize, DataTypes);
 
 sequelize.sync({ alter: true })
   .then(() => console.log("Tables have been updated"))

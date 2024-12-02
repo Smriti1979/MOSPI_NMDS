@@ -17,21 +17,15 @@ const {
   getUserdb,
   updateUserDb,
   deleteUserDb,
+  createMetadatadb
 
   // getMetadataByAgencyIddb,
- 
-  // createProductdb,
-  // getProductByIddb,
-  // getProductdb,
   // getMetaDataByProductNamedb,
   // getMetaDataByVersionP,
   // getMetaDataByVersionPV,
-  // updateProductDevdb,
-  // updateProductDomdb,
   // updateMetadatadb,
-  // deleteProductdb,
   // deleteMetadatadb,
-  // createMetadatadb,
+ 
   // getMetaDatadb,
   // searchMetaDatadb,
   // getMetadataByAgencydb
@@ -108,12 +102,18 @@ const signin = async (req, res) => {
 
 
 const changePassword = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, oldPassword, password, confirmPassword } = req.body;
 
   try {
     // Validate input
-    if (!username || !password) {
-      return res.status(400).json({ error: "Both username and password are required." });
+    if (!username || !oldPassword || !password || !confirmPassword) {
+      return res.status(400).json({
+        error: "Username, old password, new password, and confirm password are required.",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: "New password and confirm password do not match." });
     }
 
     // Fetch the user based on the username
@@ -125,19 +125,18 @@ const changePassword = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
+    // Verify the old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Old password is incorrect." });
+    }
+
     // Hash the new password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Update the password and set newuser to false
-    const updateQuery = `
-      UPDATE users
-      SET password = $1, newuser = false
-      WHERE username = $2
-      RETURNING user_id, username;
-    `;
-    const updateResult = await poolpimd.query(updateQuery, [hashedPassword, username]);
-    const updatedUser = updateResult.rows[0];
+    // Update the password using the `updatePassword` function
+    const updatedUser = await updatePassword(user.user_id, hashedPassword);
 
     if (!updatedUser) {
       return res.status(500).json({ error: "Failed to update the password." });
@@ -432,53 +431,60 @@ const deleteagency = async (req, res) => {
 };
 
 
+const createMetadata = async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Extract predefined fields from the request body
+    const { agency_id, product_name, data, released_data_link } = req.body;
+
+    if (!agency_id || !product_name || !data || !released_data_link) {
+      return res.status(400).json({
+        error: true,
+        errorMessage: "agency_id, product_name, and data are required fields.",
+      });
+    }
+
+    // Serialize the `data` object into a JSON string
+    const dataString = JSON.stringify(data);
+
+    // Prepare metadata details to be passed to the database function
+    const metadataDetails = {
+      agency_id,
+      product_name,
+      data: Buffer.from(dataString), // Convert JSON string to Buffer for BLOB storage
+      released_data_link,
+      created_by: user.username || "System", // Assume user info is available in the request
+    };
+
+    // Call the database function to create the metadata
+    const result = await createMetadatadb(metadataDetails);
+
+    // Handle error if the database operation fails
+    if (result.error) {
+      throw new Error(result.errorMessage);
+    }
+
+    // Return successful response
+    return res.status(201).json({
+      data: result,
+      msg: "Metadata created successfully",
+      statusCode: 201,
+    });
+  } catch (error) {
+    console.error("Error in createMetadata:", error);
+    return res.status(500).json({
+      error: true,
+      errorMessage: `Error in creating metadata: ${error.message}`,
+    });
+  }
+};
+
+
 
 
 
 //METADATA
-// const createMetadata = async (req, res) => {
-//   try {
-//     const user = req.user;
-
-//     // Check user roles for permission
-//     const userRoles = await getUserRoles(user.id);  
-//     const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
-//     if (user.usertype !== "PIMD_USER" && !hasRole1or2) {
-//       return res
-//         .status(405)
-//         .json({ error: `Only PIMD_USER or users with roleId 1 or 2 can create the Metadata` });
-//     }
-
-//     // Exclude predefined fields and store the rest in the `data` column as JSON
-//     const { agency_id, product_id, product_name, status, created_by, ...dynamicData } = req.body; // Capture dynamic fields into `dynamicData`
-
-//     // Call the database function to create the metadata
-//     const result = await createMetadatadb({
-//       agency_id, 
-//       product_id, 
-//       product_name, 
-//       data: dynamicData,  // Store the remaining dynamic fields as JSON
-//       user_created_id: user.id,  // user who created this metadata
-//       status, 
-//       created_by, 
-//     });
-
-//     // Handle error in case no result is returned
-//     if (result?.error) {
-//       throw new Error(result?.errorMessage);
-//     }
-
-//     // Return successful response
-//     return res.status(201).send({
-//       data: result,
-//       msg: "Metadata created successfully",
-//       statusCode: 201,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({ error: `Error in creating metadata: ${error.message}` });
-//   }
-// };
 
 // const getMetaData = async (req, res) => {
 //   try {
@@ -680,35 +686,6 @@ const deleteagency = async (req, res) => {
 //   }
 // };
 
-
-// const getMetaDataByAgency = async (req, res) => {
-//   try {
-//     const user = req.user;
-//     const { agency_name } = req.params;
-
-//     if (!user || !agency_name) {
-//       return res.status(400).json({ error: "Agency name is missing in the user object." });
-//     }
-
-//     const agencyData = await getMetadataByAgencydb(agency_name);
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "metadata data fetched successfully.",
-//       data: agencyData,
-//     });
-//   } catch (error) {
-//     console.error("Error in getMetaDataByAgency controller:", error.message);
-
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to fetch agency data.",
-//       error: error.message,
-//     });
-//   }
-// };
-
-
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ where: { username } });
@@ -736,6 +713,7 @@ module.exports = {
   updateagency,
   deleteagency,
 
+  createMetadata,
   // getMetadata,
 
   // getMetaDataByProductName,
@@ -744,7 +722,7 @@ module.exports = {
   // deleteProduct,
   // deleteMetadata,
   // getProductById,
-  // createMetadata,
+  
   // createProduct,
   // getProduct,
   // getMetaData,
