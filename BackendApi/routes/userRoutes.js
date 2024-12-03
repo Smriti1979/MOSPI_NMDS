@@ -17,6 +17,7 @@ const {
   deleteUser,
   updateUser,
   createMetadata,
+  updateMetadata,
   getAllMetadata,
   deleteMetadata
   // getProductById,
@@ -59,6 +60,7 @@ router.route("/pimd/agency/:agency_name").put(verifyJWT, updateagency);
 
 router.route("/pimd/metadata").post(verifyJWT, createMetadata); 
 router.route("/metadata").get(getAllMetadata);
+router.route("/pimd/metadata/:metadata_id").put(verifyJWT, updateMetadata);
 router.route("/pimd/metadata/:id").delete(verifyJWT, deleteMetadata);
 
 // router.route("/pimd/meta/search").get(searchMetaData); 

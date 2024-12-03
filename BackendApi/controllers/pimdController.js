@@ -18,7 +18,7 @@ const {
   updateUserDb,
   deleteUserDb,
   createMetadatadb,
-
+  updateMetadatadb,
   getAllMetadatadb,
   deleteMetadatadb
 
@@ -275,9 +275,9 @@ const deleteUser = async (req, res) => {
 //AGENCY
 
 const createagency = async (req, res) => {
-  const { agency_name} = req.body;
+  const { agency_name } = req.body;
   try {
-    const user = req.user;
+    const user = req.user;  // Assuming the JWT middleware is setting the `user` object
 
     if (user.usertype !== "PIMD_USER") {
       return res
@@ -285,19 +285,24 @@ const createagency = async (req, res) => {
         .json({ error: `Only PIMD_USER can create agency` });
     }
 
-    const agencyDetails={
+    const agencyDetails = {
       agency_name,
-      created_by: user.username || "System",
-    }
-   
-    const result = await createagencydb(agencyDetails);
+      created_by: user.username || "System",  // Use the logged-in user's username or default to "System"
+    };
 
-    if (result?.error == true) {
-      throw result?.errorMessage;
+    // Pass correct arguments to the DB function
+    const result = await createagencydb(agencyDetails.agency_name, agencyDetails.created_by);
+
+    // Handle DB errors
+    if (result?.error) {
+      return res
+        .status(result.errorCode || 500)
+        .json({ error: result.errorMessage });
     }
+
     return res.status(201).send({
       data: result,
-      msg: "agency created successfully",
+      msg: "Agency created successfully",
       statusCode: true,
     });
   } catch (error) {
@@ -307,6 +312,7 @@ const createagency = async (req, res) => {
       .json({ error: `Error in Creating agency: ${error.message}` });
   }
 };
+
 const getagency = async (req, res) => {
   try {
     const user = req.user;
@@ -406,8 +412,9 @@ const deleteagency = async (req, res) => {
 const createMetadata = async (req, res) => {
   try {
     const user = req.user;
+    console.log("user", user);
 
-    if (!user || !user.agency_id) {
+    if (!user || !user.id) {
       return res.status(403).json({
         error: true,
         errorMessage: "Agency ID not found. Please log in again.",
@@ -415,7 +422,7 @@ const createMetadata = async (req, res) => {
     }
 
     // Use the agency_id from the logged-in user
-    const agency_id = user.agency_id;
+    const agency_id = user.id;
 
     // Extract predefined fields from the request body
     const { product_name, data, released_data_link } = req.body;
@@ -483,6 +490,59 @@ const getAllMetadata = async (req, res) => {
     return res.status(500).json({
       error: true,
       errorMessage: `Error in getAllMetadata: ${error.message}`,
+    });
+  }
+};
+
+const updateMetadata = async(req,res)=>{
+  try{
+    const user=req.user;
+    if(!user || !user.id){
+      return res.status(403).json({
+        error: true,
+        errorMessage: "Agency ID not found. Please log in again.",
+      });
+    }
+
+    const agency_id = user.id;
+    const {metadata_id }= req.params;
+    const { product_name, data, released_data_link } = req.body;
+
+    if (!metadata_id || !product_name || !data || !released_data_link) {
+      return res.status(400).json({
+        error: true,
+        errorMessage: "metadata_id, product_name, data, and released_data_link are required fields.",
+      });
+    }
+
+    const dataString = JSON.stringify(data);
+
+    const updateDetails = {
+      metadata_id,
+      agency_id,
+      product_name,
+      data: Buffer.from(dataString),
+      released_data_link,
+      updated_by: user.username || "System",
+    };
+
+    const result = await updateMetadatadb(updateDetails);
+
+    if (result.error) {
+      throw new Error(result.errorMessage);
+    }
+
+    return res.status(200).json({
+      data: result,
+      msg: "Metadata updated successfully",
+      statusCode: 200,
+    });
+
+  }catch(error){
+    console.error("Error in updateMetadata:", error);
+    return res.status(500).json({
+      error: true,
+      errorMessage: `Error in updating metadata: ${error.message}`,
     });
   }
 };
@@ -720,6 +780,7 @@ module.exports = {
 
   createMetadata,
   getAllMetadata,
+  updateMetadata,
   deleteMetadata
 
 

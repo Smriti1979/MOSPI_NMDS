@@ -152,30 +152,31 @@ async function deleteUserDb(username) {
 }
 
 
-async function createagencydb(agency_name,created_by) {
+async function createagencydb(agency_name, created_by) {
   try {
-    const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1,&2) RETURNING *`;
-    await poolpimd.query(sqlQuery, [agency_name,created_by]);
-    const result = await poolpimd.query(
-      "SELECT * FROM agencies WHERE agency_name=$1",
-      [agency_name,created_by]
-    );
+    const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1, $2) RETURNING *`;
+    const result = await poolpimd.query(sqlQuery, [agency_name, created_by]);
+
+    // Check if insertion was successful
     if (result.rows.length === 0) {
       return {
         error: true,
         errorCode: 405,
-        errorMessage: `product not found after insertion`,
+        errorMessage: `Agency not found after insertion`,
       };
     }
     return result.rows[0];
   } catch (error) {
+    // Log the actual error for debugging purposes
+    console.error('Error in DB query:', error);
     return {
       error: true,
       errorCode: 405,
-      errorMessage: `Problem in db unable to create agency`,
+      errorMessage: `Problem in DB, unable to create agency: ${error.message}`,
     };
   }
 }
+
 
 async function getagencydb() {
   try {
@@ -338,7 +339,82 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
     };
   }
 }
+async function updateMetadatadb({ metadata_id, agency_id, product_name, data, released_data_link, updated_by }) {
+  try {
+    // Step 1: Fetch the current metadata record to ensure it exists and retrieve version
+    const currentMetadataQuery = `
+      SELECT * FROM metadata
+      WHERE metadata_id = $1 AND agency_id = $2 AND latest_version = true;
+    `;
 
+    const currentMetadataResult = await poolpimd.query(currentMetadataQuery, [metadata_id, agency_id]);
+
+    if (currentMetadataResult.rows.length === 0) {
+      return {
+        error: true,
+        errorMessage: "No existing metadata found for the provided metadata_id and agency_id.",
+      };
+    }
+
+    const currentMetadata = currentMetadataResult.rows[0];
+    const newVersion = currentMetadata.version + 1;
+
+    // Step 2: Update `latest_version` to false for the current metadata record
+    const updateLatestVersionQuery = `
+      UPDATE metadata
+      SET latest_version = false, updated_at = $1, updated_by = $2
+      WHERE metadata_id = $3 AND agency_id = $4 AND latest_version = true;
+    `;
+
+    await poolpimd.query(updateLatestVersionQuery, [new Date(), updated_by, metadata_id, agency_id]);
+
+    // Step 3: Insert a new metadata record with updated details and `latest_version = true`
+    const insertQuery = `
+      INSERT INTO metadata (
+        metadata_id,
+        agency_id,
+        product_name,
+        data,
+        released_data_link,
+        created_by,
+        created_at,
+        updated_by,
+        updated_at,
+        latest_version,
+        version
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, $10)
+      RETURNING *;
+    `;
+
+    const result = await poolpimd.query(insertQuery, [
+      metadata_id,
+      agency_id,
+      product_name,
+      data,
+      released_data_link,
+      currentMetadata.created_by, // Preserve original creator
+      currentMetadata.created_at, // Preserve original created_at timestamp
+      updated_by,
+      new Date(),
+      newVersion,
+    ]);
+
+    if (result.rows.length === 0) {
+      return {
+        error: true,
+        errorMessage: "Failed to update metadata.",
+      };
+    }
+
+    return result.rows[0]; // Return the newly created metadata version
+  } catch (error) {
+    console.error("Error in updateMetadatadb:", error);
+    return {
+      error: true,
+      errorMessage: `Error in updateMetadatadb: ${error.message}`,
+    };
+  }
+}
 async function getAllMetadatadb() {
   try {
     const query = `
@@ -366,7 +442,7 @@ async function deleteMetadatadb(id) {
   try {
     const deleteQuery = `
       DELETE FROM metadata
-      WHERE id = $1;
+      WHERE metadata_id = $1;
     `;
 
     const result = await poolpimd.query(deleteQuery, [id]);
@@ -599,6 +675,7 @@ module.exports = {
 
   createMetadatadb,
   getAllMetadatadb,
+  updateMetadatadb,
   deleteMetadatadb
 
   // getMetadataByAgencyIddb
