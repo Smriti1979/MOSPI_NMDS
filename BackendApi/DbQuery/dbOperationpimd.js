@@ -152,13 +152,13 @@ async function deleteUserDb(username) {
 }
 
 
-async function createagencydb(agency_name) {
+async function createagencydb(agency_name,created_by) {
   try {
-    const sqlQuery = `INSERT INTO agencies (agency_name) VALUES($1)`;
-    await poolpimd.query(sqlQuery, [agency_name]);
+    const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1,&2) RETURNING *`;
+    await poolpimd.query(sqlQuery, [agency_name,created_by]);
     const result = await poolpimd.query(
       "SELECT * FROM agencies WHERE agency_name=$1",
-      [agency_name]
+      [agency_name,created_by]
     );
     if (result.rows.length === 0) {
       return {
@@ -176,6 +176,7 @@ async function createagencydb(agency_name) {
     };
   }
 }
+
 async function getagencydb() {
   try {
     const getQuery = `SELECT * FROM agencies `;

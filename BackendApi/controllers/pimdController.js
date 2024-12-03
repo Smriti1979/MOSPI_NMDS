@@ -285,15 +285,12 @@ const createagency = async (req, res) => {
         .json({ error: `Only PIMD_USER can create agency` });
     }
 
-    //if agency name already exist return error message "agency already exist"
-    const existingAgency = await getagencydb(agency_name); 
-    if (existingAgency) {
-      return res
-        .status(409) // Conflict HTTP status code
-        .json({ error: "Agency already exists" });
+    const agencyDetails={
+      agency_name,
+      created_by: user.username || "System",
     }
    
-    const result = await createagencydb(agency_name);
+    const result = await createagencydb(agencyDetails);
 
     if (result?.error == true) {
       throw result?.errorMessage;
