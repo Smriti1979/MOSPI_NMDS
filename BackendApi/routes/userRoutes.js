@@ -17,7 +17,8 @@ const {
   deleteUser,
   updateUser,
   createMetadata,
-  // getMetadata,
+  getAllMetadata,
+  deleteMetadata
   // getProductById,
   // getMetaDataByProductName,
   // updateProduct,
@@ -57,19 +58,16 @@ router.route("/pimd/agency").get(verifyJWT, getagency);
 router.route("/pimd/agency/:agency_name").put(verifyJWT, updateagency);
 
 router.route("/pimd/metadata").post(verifyJWT, createMetadata); 
+router.route("/metadata").get(getAllMetadata);
+router.route("/pimd/metadata/:id").delete(verifyJWT, deleteMetadata);
 
-// router.route("/pimd/metadata/agency").get(verifyJWT, getagency);
 // router.route("/pimd/meta/search").get(searchMetaData); 
-// router.route("/pimd/product/:productId").get(verifyJWT, getProductById); 
-// router.route("/pimd/product").get(verifyJWT, getProduct); 
-// router.route("/pimd/product/:id").put(verifyJWT, updateProduct); 
-// router.route("/pimd/product/:id").delete(verifyJWT, deleteProduct); 
 // router.route("/pimd/metadata/version").get(verifyJWT, getMetaDataByVersion); 
 // router.route("/pimd/metadata/:Product").get(verifyJWT, getMetaDataByProductName);
 // // router.route("/pimd/metadata/:product_id").put(verifyJWT, updatedMetadata); 
 // router.route("/pimd/metadata/:product").delete(verifyJWT, deleteMetadata);
 
-// router.route("/pimd/metadata").get(getMetaData);
+
 // router.route("/pimd/metadata/:agency_name").get(verifyJWT, getMetaDataByAgency); 
 
 

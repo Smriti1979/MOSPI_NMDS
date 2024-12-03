@@ -244,7 +244,7 @@ async function deleteagencydb(agency_name) {
     await poolpimd.query(deleteUsersQuery, [agencyId]);
 
     // Delete the agency
-    const deleteAgencyQuery = `DELETE FROM agency WHERE agency_name = $1`;
+    const deleteAgencyQuery = `DELETE FROM agencies WHERE agency_name = $1`;
     await poolpimd.query(deleteAgencyQuery, [agency_name]);
 
     // Commit the transaction
@@ -266,44 +266,32 @@ async function deleteagencydb(agency_name) {
 }
 async function createMetadatadb({ agency_id, product_name, data, released_data_link, created_by }) {
   try {
-    let metadataId;
-    let version;
-
-    // Step 1: Check if the product already exists
+    // Step 1: Check if the product with the same agency_id and product_name already exists
     const existingProductQuery = `
-      SELECT metadata_id, version FROM metadata
-      WHERE agency_id = $1 AND product_name = $2
-      ORDER BY version DESC
-      LIMIT 1;
+      SELECT metadata_id FROM metadata
+      WHERE agency_id = $1 AND product_name = $2;
     `;
 
     const existingProductResult = await poolpimd.query(existingProductQuery, [agency_id, product_name]);
 
     if (existingProductResult.rows.length > 0) {
-      // Product exists, reuse the metadata_id and increment the version
-      metadataId = existingProductResult.rows[0].metadata_id;
-      version = existingProductResult.rows[0].version + 1; // Increment version
-    } else {
-      // Product is new, find the max metadata_id and set version to 1
-      const maxMetadataQuery = `
-        SELECT MAX(metadata_id) AS max_metadata_id FROM metadata;
-      `;
-
-      const maxMetadataResult = await poolpimd.query(maxMetadataQuery);
-
-      const maxMetadataId = maxMetadataResult.rows[0].max_metadata_id || 0; // Default to 0 if no records exist
-      metadataId = maxMetadataId + 1; // Increment for the new product
-      version = 1; // Start version at 1 for new products
+      // If the product exists, return an error
+      return {
+        error: true,
+        errorMessage: "Metadata with the same agency_id and product_name already exists.",
+      };
     }
 
-    // Step 2: Ensure the `latest_version` is set to false for previous metadata of the same product
-    const updateQuery = `
-      UPDATE metadata
-      SET latest_version = false
-      WHERE agency_id = $1 AND product_name = $2 AND latest_version = true;
+    // Step 2: Find the max metadata_id for new products and initialize version
+    const maxMetadataQuery = `
+      SELECT MAX(metadata_id) AS max_metadata_id FROM metadata;
     `;
 
-    await poolpimd.query(updateQuery, [agency_id, product_name]);
+    const maxMetadataResult = await poolpimd.query(maxMetadataQuery);
+
+    const maxMetadataId = maxMetadataResult.rows[0].max_metadata_id || 0; // Default to 0 if no records exist
+    const metadataId = maxMetadataId + 1; // Increment for the new product
+    const version = 1; // Start version at 1 for new products
 
     // Step 3: Insert the new metadata record with `latest_version = true`
     const insertQuery = `
@@ -349,69 +337,59 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
     };
   }
 }
-async function getMetadataByAgencyIddb(agencyId) {
+
+async function getAllMetadatadb() {
   try {
     const query = `
-      SELECT * 
-      FROM metadata 
-      WHERE agency_id = $1
+      SELECT metadata_id, agency_id, product_name, version, latest_version, released_data_link, created_by, created_at, updated_by, updated_at
+      FROM metadata
+      ORDER BY created_at DESC; -- Sort by creation time
     `;
 
-    const result = await poolpimd.query(query, [agencyId]);
+    const result = await poolpimd.query(query);
 
-    if (result.rows.length === 0) {
-      return {
-        error: true,
-        errorCode: 404,
-        errorMessage: "No metadata found for this agency.",
-      };
-    }
-
+    // Return all rows fetched from the database
     return {
       error: false,
       data: result.rows,
     };
   } catch (error) {
-    console.error("Database error:", error);
+    console.error("Error in getAllMetadatadb:", error);
     return {
       error: true,
-      errorCode: 500,
-      errorMessage: "Internal server error.",
+      errorMessage: `Error in getAllMetadatadb: ${error.message}`,
+    };
+  }
+}
+async function deleteMetadatadb(id) {
+  try {
+    const deleteQuery = `
+      DELETE FROM metadata
+      WHERE id = $1;
+    `;
+
+    const result = await poolpimd.query(deleteQuery, [id]);
+
+    if (result.rowCount === 0) {
+      return {
+        error: true,
+        errorMessage: "No metadata found with the given ID.",
+      };
+    }
+
+    return {
+      error: false,
+      message: "Metadata deleted successfully.",
+    };
+  } catch (error) {
+    console.error("Error in deleteMetadatadb:", error);
+    return {
+      error: true,
+      errorMessage: `Error in deleteMetadatadb: ${error.message}`,
     };
   }
 }
 
-
-
-
-
-// async function getMetaDatadb() {
-//   try {
-//     const getQuery = `SELECT * FROM metadata WHERE latest=true ORDER BY "created_at" DESC`;
-//     const data = await poolpimd.query(getQuery);
-
-//     if (data.rows.length === 0) {
-//       return {
-//         error: true,
-//         errorCode: 402,
-//         errorMessage: "No data found in metaTable",
-//       };
-//     }
-
-//     // Return consistent object structure on success
-//     return {
-//       error: false,
-//       data: data.rows,
-//     };
-//   } catch (error) {
-//     // Return detailed error message
-//     return {
-//       error: true,
-//       errorCode: 500,
-//       errorMessage: `Database error: ${error.message}`,
-//     };
-//   }
-// }
 
 // async function getMetaDataByProductNamedb(Product) {
 //   const getQuery = `SELECT * FROM  metadata where "product_name"=$1  AND  latest=true`;
@@ -618,7 +596,9 @@ module.exports = {
   updateagencydb,
   deleteagencydb,
 
-  createMetadatadb
+  createMetadatadb,
+  getAllMetadatadb,
+  deleteMetadatadb
 
   // getMetadataByAgencyIddb
 
@@ -629,7 +609,7 @@ module.exports = {
   // getMetaDataByVersionP,
   // getMetaDataByVersionPV,
   // getagencyByIddb,
-  // getMetaDatadb,
+  
   // searchMetaDatadb,
   // getMetadataByAgencydb
 };

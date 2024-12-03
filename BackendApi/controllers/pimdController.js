@@ -17,7 +17,10 @@ const {
   getUserdb,
   updateUserDb,
   deleteUserDb,
-  createMetadatadb
+  createMetadatadb,
+
+  getAllMetadatadb,
+  deleteMetadatadb
 
   // getMetadataByAgencyIddb,
   // getMetaDataByProductNamedb,
@@ -193,7 +196,7 @@ const createUser = async (req, res) => {
 };
 const getUser=async(req,res)=>{
   const user = req.user;
-    if (user.usertype !== "PIMD_USER") {
+    if (user.usertype != "PIMD_USER") {
       return res
         .status(405)
         .json({ error: `Only PIMD_USER can get the users` });
@@ -269,42 +272,6 @@ const deleteUser = async (req, res) => {
 };
 
 
-// const getMetadata = async (req, res) => {
-//   try {
-//     // Extract the user's agency_id from the authenticated user data
-//     const { agency_id } = req.user;
-
-//     if (!agency_id) {
-//       return res.status(400).json({
-//         error: true,
-//         message: "Agency ID not provided.",
-//       });
-//     }
-
-//     // Fetch metadata for the agency
-//     const metadataResponse = await getMetadataByAgencyIddb(agency_id);
-
-//     if (metadataResponse.error) {
-//       return res
-//         .status(metadataResponse.errorCode)
-//         .json({ error: true, message: metadataResponse.errorMessage });
-//     }
-
-//     // Send the retrieved metadata
-//     return res.status(200).json({
-//       error: false,
-//       data: metadataResponse.data,
-//     });
-//   } catch (error) {
-//     console.error("Controller error:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "An unexpected error occurred.",
-//     });
-//   }
-// };
-
-
 //AGENCY
 
 const createagency = async (req, res) => {
@@ -316,6 +283,14 @@ const createagency = async (req, res) => {
       return res
         .status(405)
         .json({ error: `Only PIMD_USER can create agency` });
+    }
+
+    //if agency name already exist return error message "agency already exist"
+    const existingAgency = await getagencydb(agency_name); 
+    if (existingAgency) {
+      return res
+        .status(409) // Conflict HTTP status code
+        .json({ error: "Agency already exists" });
     }
    
     const result = await createagencydb(agency_name);
@@ -435,13 +410,23 @@ const createMetadata = async (req, res) => {
   try {
     const user = req.user;
 
+    if (!user || !user.agency_id) {
+      return res.status(403).json({
+        error: true,
+        errorMessage: "Agency ID not found. Please log in again.",
+      });
+    }
+
+    // Use the agency_id from the logged-in user
+    const agency_id = user.agency_id;
+
     // Extract predefined fields from the request body
-    const { agency_id, product_name, data, released_data_link } = req.body;
+    const { product_name, data, released_data_link } = req.body;
 
     if (!agency_id || !product_name || !data || !released_data_link) {
       return res.status(400).json({
         error: true,
-        errorMessage: "agency_id, product_name, and data are required fields.",
+        errorMessage: "product_name, and data are required fields.",
       });
     }
 
@@ -480,40 +465,63 @@ const createMetadata = async (req, res) => {
   }
 };
 
+const getAllMetadata = async (req, res) => {
+  try {
+    const result = await getAllMetadatadb();
 
+    if (result.error) {
+      return res.status(500).json({
+        error: true,
+        errorMessage: result.errorMessage,
+      });
+    }
 
+    return res.status(200).json({
+      error: false,
+      data: result.data,
+      msg: "Metadata fetched successfully.",
+    });
+  } catch (error) {
+    console.error("Error in getAllMetadata:", error);
+    return res.status(500).json({
+      error: true,
+      errorMessage: `Error in getAllMetadata: ${error.message}`,
+    });
+  }
+};
 
+const deleteMetadata = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-//METADATA
+    if (!id) {
+      return res.status(400).json({
+        error: true,
+        errorMessage: "id is required.",
+      });
+    }
 
-// const getMetaData = async (req, res) => {
-//   try {
-//     const metadata = await getMetaDatadb();
+    const result = await deleteMetadatadb(id);
 
-//     if (metadata?.error === true) {
-//       throw metadata?.errorMessage;
-//     }
+    if (result.error) {
+      return res.status(404).json({
+        error: true,
+        errorMessage: result.errorMessage,
+      });
+    }
 
-//     // Check if metadata has a "data" field and simplify it
-//     if (metadata?.data && Array.isArray(metadata.data)) {
-//       metadata.data = metadata.data.map(item => {
-//         if (item.data && item.data.data) {
-//           item.data = item.data.data; // Flatten the nested data
-//         }
-//         return item;
-//       });
-//     }
-
-//     return res.status(200).send({
-//       metadata,
-//       msg: "metadata",
-//       statusCode: true,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({ error: `Unable to fetch data Error=${error}` });
-//   }
-// };
+    return res.status(200).json({
+      error: false,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error("Error in deleteMetadata:", error);
+    return res.status(500).json({
+      error: true,
+      errorMessage: `Error in deleteMetadata: ${error.message}`,
+    });
+  }
+};
 
 
 // const getMetaDataByProductName = async (req, res) => {
@@ -714,7 +722,9 @@ module.exports = {
   deleteagency,
 
   createMetadata,
-  // getMetadata,
+  getAllMetadata,
+  deleteMetadata
+
 
   // getMetaDataByProductName,
   // updateProduct,
