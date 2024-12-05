@@ -22,6 +22,47 @@ db.metadata = require("./mwp/metadata")(sequelize, DataTypes);
 db.roles = require("./mwp/roles")(sequelize, DataTypes);
 db.userroles = require("./mwp/userroles")(sequelize, DataTypes);
 
+// Function to seed predefined agencies
+const seedAgencies = async () => {
+  const predefinedAgencies = [
+    { agency_name: "MWP" }, // Add more agencies as needed
+  ];
+
+  for (const agency of predefinedAgencies) {
+    await db.agencies.findOrCreate({
+      where: { agency_name: agency.agency_name },
+    });
+  }
+
+  console.log("Predefined agencies have been seeded successfully.");
+};
+
+// Function to seed predefined users
+const seedUsers = async () => {
+  const predefinedUsers = [
+    {
+      agency_id: 1, // Assumes agency with ID 1 exists; modify as needed
+      username: "mwp_admin",
+      name: "Ram",
+      password: "$2a$10$OlI7KS7oEJP.2/urpRWfJuEa8NqP49FrSRcGPPr9hhiMs.qN6Z/HS", // bcrypt hash of "mwp_admin123"
+      usertype: "mwp_admin",
+      phone: "1234567890",
+      email: "mwp@gmail.com",
+      address: "ABC Colony",
+      newuser: false,
+    },
+  ];
+
+  for (const user of predefinedUsers) {
+    await db.users.findOrCreate({
+      where: { username: user.username },
+      defaults: user, // Insert new user with these details if not found
+    });
+  }
+
+  console.log("Predefined users have been seeded successfully.");
+};
+
 // Function to seed predefined roles
 const seedRoles = async () => {
   const predefinedRoles = [
@@ -38,7 +79,7 @@ const seedRoles = async () => {
   const existingRoles = await db.roles.findAll();
   if (existingRoles.length >= predefinedRoles.length) {
     console.log("Roles are already seeded.");
-    return; // Skip seeding if roles are already present
+    return;
   }
 
   for (const roleName of predefinedRoles) {
@@ -66,7 +107,7 @@ const seedUserRoles = async () => {
   const existingUserRoles = await db.userroles.findAll();
   if (existingUserRoles.length >= predefinedUserRoles.length) {
     console.log("User roles are already seeded.");
-    return; // Skip seeding if user roles are already present
+    return;
   }
 
   for (const userRole of predefinedUserRoles) {
@@ -92,6 +133,8 @@ const initDatabase = async () => {
     console.log("All models synchronized successfully.");
 
     // Seed data
+    await seedAgencies();
+    await seedUsers();
     await seedRoles();
     await seedUserRoles();
   } catch (error) {

@@ -55,8 +55,8 @@ create table roles(
 )
 
 INSERT INTO agencies (agency_name) VALUES ('MWP')
--- "password":"mwpUSER123"
-INSERT INTO users(agency_id, username, name, password, usertype, phone, email, address, newuser) VALUES ('1', 'mwp_admin', 'Ram', '$2a$04$We8XpsbPqR/K0NPUm8uIk.BKCSBjzUaVZRDIgATVbAlBlkgZDosZq','mwp_admin', '1234567890', 'mwp@gmail.com', 'ABC Colony', 'false');
+-- "password":"mwp_admin123"
+INSERT INTO users(agency_id, username, name, password, usertype, phone, email, address, newuser) VALUES ('1', 'mwp_admin', 'Ram', '$2a$10$OlI7KS7oEJP.2/urpRWfJuEa8NqP49FrSRcGPPr9hhiMs.qN6Z/HS','mwp_admin', '1234567890', 'mwp@gmail.com', 'ABC Colony', 'false');
 
 
 
