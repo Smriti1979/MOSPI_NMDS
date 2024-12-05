@@ -4,7 +4,7 @@ const { Pool } = require("pg");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 // DB connection for ASI
-const poolpimd = new Pool({
+const poolmwp = new Pool({
   user: process.env.DB_USERNAME,
   host: process.env.DB_HOST,
   database: process.env.DB_DATABASETPM,
@@ -13,7 +13,7 @@ const poolpimd = new Pool({
 });
 
 
-poolpimd.connect((err, client, release) => {
+poolmwp.connect((err, client, release) => {
   if (err) {
     return console.error("Error acquiring client", err.stack);
   }
@@ -23,7 +23,7 @@ poolpimd.connect((err, client, release) => {
 
 async function EmailValidation(username) {
   const query = "SELECT * FROM users WHERE username = $1";
-  const result = await poolpimd.query(query, [username]);
+  const result = await poolmwp.query(query, [username]);
   return result.rows[0];
 }
 
@@ -35,7 +35,7 @@ async function updatePassword(userId, hashedPassword) {
     RETURNING user_id, username;
   `;
 
-  const result = await poolpimd.query(query, [hashedPassword, userId]);
+  const result = await poolmwp.query(query, [hashedPassword, userId]);
   return result.rows[0]; // Returns updated user details or undefined if no match
 }
 
@@ -44,7 +44,7 @@ async function createUserdb(agency_id, username, password, usertype, name, email
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Start a transaction to ensure atomicity in creating a user and assigning roles
-  const client = await poolpimd.connect();
+  const client = await poolmwp.connect();
   try {
     await client.query('BEGIN');
 
@@ -91,7 +91,7 @@ async function getUserdb() {
         users.agency_id = agencies.agency_id
     `;
 
-    const user = await poolpimd.query(query);
+    const user = await poolmwp.query(query);
 
     if (user.rows.length === 0) {
       return {
@@ -123,7 +123,7 @@ async function updateUserDb(username, name, email, phone, address) {
     WHERE username = $6
     RETURNING *`;
 
-  const user = await poolpimd.query(query, [
+  const user = await poolmwp.query(query, [
     username, name, email, phone, address, username  // Added username to the query parameters
   ]);
 
@@ -139,7 +139,7 @@ async function updateUserDb(username, name, email, phone, address) {
 
 async function deleteUserDb(username) {
   const query = `DELETE FROM users WHERE username = $1 RETURNING *`;
-  const user = await poolpimd.query(query, [username]);
+  const user = await poolmwp.query(query, [username]);
 
   if (user.rows.length === 0) {
     return {
@@ -155,7 +155,7 @@ async function deleteUserDb(username) {
 async function createagencydb(agency_name, created_by) {
   try {
     const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1, $2) RETURNING *`;
-    const result = await poolpimd.query(sqlQuery, [agency_name, created_by]);
+    const result = await poolmwp.query(sqlQuery, [agency_name, created_by]);
 
     // Check if insertion was successful
     if (result.rows.length === 0) {
@@ -181,7 +181,7 @@ async function createagencydb(agency_name, created_by) {
 async function getagencydb() {
   try {
     const getQuery = `SELECT * FROM agencies `;
-    const data = await poolpimd.query(getQuery);
+    const data = await poolmwp.query(getQuery);
     if (data.rows.length == 0) {
       return {
         error: true,
@@ -201,11 +201,11 @@ async function getagencydb() {
 async function updateagencydb(agency_name, new_agency_name) {
   // Update the agency_name in the agency table
   const updateQuery = `UPDATE agencies SET agency_name=$1 WHERE agency_name=$2`;
-  await poolpimd.query(updateQuery, [new_agency_name, agency_name]);
+  await poolmwp.query(updateQuery, [new_agency_name, agency_name]);
 
   // Fetch the updated record to return as a response
   const getQuery = `SELECT * FROM agencies WHERE agency_name=$1`;
-  const data = await poolpimd.query(getQuery, [new_agency_name]);
+  const data = await poolmwp.query(getQuery, [new_agency_name]);
 
   if (data.rows.length === 0) {
     return {
@@ -219,15 +219,15 @@ async function updateagencydb(agency_name, new_agency_name) {
 async function deleteagencydb(agency_name) {
   try {
     // Start a transaction
-    await poolpimd.query("BEGIN");
+    await poolmwp.query("BEGIN");
 
     // Fetch the agency_id for the given agency_name
     const getAgencyIdQuery = `SELECT agency_id FROM agencies WHERE agency_name = $1`;
-    const agencyResult = await poolpimd.query(getAgencyIdQuery, [agency_name]);
+    const agencyResult = await poolmwp.query(getAgencyIdQuery, [agency_name]);
 
     if (agencyResult.rows.length === 0) {
       // Rollback if the agency does not exist
-      await poolpimd.query("ROLLBACK");
+      await poolmwp.query("ROLLBACK");
       return {
         error: true,
         errorCode: 404,
@@ -239,18 +239,18 @@ async function deleteagencydb(agency_name) {
 
     // Delete associated metadata
     const deleteMetadataQuery = `DELETE FROM metadata WHERE agency_id = $1`;
-    await poolpimd.query(deleteMetadataQuery, [agencyId]);
+    await poolmwp.query(deleteMetadataQuery, [agencyId]);
 
     // Delete associated users
     const deleteUsersQuery = `DELETE FROM users WHERE agency_id = $1`;
-    await poolpimd.query(deleteUsersQuery, [agencyId]);
+    await poolmwp.query(deleteUsersQuery, [agencyId]);
 
     // Delete the agency
     const deleteAgencyQuery = `DELETE FROM agencies WHERE agency_name = $1`;
-    await poolpimd.query(deleteAgencyQuery, [agency_name]);
+    await poolmwp.query(deleteAgencyQuery, [agency_name]);
 
     // Commit the transaction
-    await poolpimd.query("COMMIT");
+    await poolmwp.query("COMMIT");
 
     return {
       success: true,
@@ -258,7 +258,7 @@ async function deleteagencydb(agency_name) {
     };
   } catch (error) {
     // Rollback transaction in case of an error
-    await poolpimd.query("ROLLBACK");
+    await poolmwp.query("ROLLBACK");
     return {
       error: true,
       errorCode: 500,
@@ -274,7 +274,7 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
       WHERE agency_id = $1 AND product_name = $2;
     `;
 
-    const existingProductResult = await poolpimd.query(existingProductQuery, [agency_id, product_name]);
+    const existingProductResult = await poolmwp.query(existingProductQuery, [agency_id, product_name]);
 
     if (existingProductResult.rows.length > 0) {
       // If the product exists, return an error
@@ -289,7 +289,7 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
       SELECT MAX(metadata_id) AS max_metadata_id FROM metadata;
     `;
 
-    const maxMetadataResult = await poolpimd.query(maxMetadataQuery);
+    const maxMetadataResult = await poolmwp.query(maxMetadataQuery);
 
     const maxMetadataId = maxMetadataResult.rows[0].max_metadata_id || 0; // Default to 0 if no records exist
     const metadataId = maxMetadataId + 1; // Increment for the new product
@@ -311,7 +311,7 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
       RETURNING *;
     `;
 
-    const result = await poolpimd.query(insertQuery, [
+    const result = await poolmwp.query(insertQuery, [
       metadataId,
       agency_id,
       product_name,
@@ -347,7 +347,7 @@ async function updateMetadatadb({ metadata_id, agency_id, product_name, data, re
       WHERE metadata_id = $1 AND agency_id = $2 AND latest_version = true;
     `;
 
-    const currentMetadataResult = await poolpimd.query(currentMetadataQuery, [metadata_id, agency_id]);
+    const currentMetadataResult = await poolmwp.query(currentMetadataQuery, [metadata_id, agency_id]);
 
     if (currentMetadataResult.rows.length === 0) {
       return {
@@ -366,7 +366,7 @@ async function updateMetadatadb({ metadata_id, agency_id, product_name, data, re
       WHERE metadata_id = $3 AND agency_id = $4 AND latest_version = true;
     `;
 
-    await poolpimd.query(updateLatestVersionQuery, [new Date(), updated_by, metadata_id, agency_id]);
+    await poolmwp.query(updateLatestVersionQuery, [new Date(), updated_by, metadata_id, agency_id]);
 
     // Step 3: Insert a new metadata record with updated details and `latest_version = true`
     const insertQuery = `
@@ -386,7 +386,7 @@ async function updateMetadatadb({ metadata_id, agency_id, product_name, data, re
       RETURNING *;
     `;
 
-    const result = await poolpimd.query(insertQuery, [
+    const result = await poolmwp.query(insertQuery, [
       metadata_id,
       agency_id,
       product_name,
@@ -423,7 +423,7 @@ async function getAllMetadatadb() {
       ORDER BY created_at DESC; -- Sort by creation time
     `;
 
-    const result = await poolpimd.query(query);
+    const result = await poolmwp.query(query);
 
     // Return all rows fetched from the database
     return {
@@ -445,7 +445,7 @@ async function deleteMetadatadb(id) {
       WHERE metadata_id = $1;
     `;
 
-    const result = await poolpimd.query(deleteQuery, [id]);
+    const result = await poolmwp.query(deleteQuery, [id]);
 
     if (result.rowCount === 0) {
       return {
@@ -470,7 +470,7 @@ async function deleteMetadatadb(id) {
 
 // async function getMetaDataByProductNamedb(Product) {
 //   const getQuery = `SELECT * FROM  metadata where "product_name"=$1  AND  latest=true`;
-//   const data = await poolpimd.query(getQuery, [Product]);
+//   const data = await poolmwp.query(getQuery, [Product]);
 //   if (data.rows.length == 0) {
 //     return {
 //       error: true,
@@ -505,7 +505,7 @@ async function deleteMetadatadb(id) {
 //     });
 //     getQuery += ' ORDER BY "createdDate" DESC';
     
-//     const data = await poolpimd.query(getQuery);
+//     const data = await poolmwp.query(getQuery);
 
 //     if (data.rows.length === 0) {
 //       return {
@@ -527,7 +527,7 @@ async function deleteMetadatadb(id) {
 
 // async function  getMetaDataByVersionP(product) {
 //   const getQuery=`SELECT * FROM metadata where "Product"=$1`;
-//   const data = await poolpimd.query(getQuery, [product]);
+//   const data = await poolmwp.query(getQuery, [product]);
 //   if (data.rows.length == 0) {
 //     return {
 //       error: true,
@@ -540,7 +540,7 @@ async function deleteMetadatadb(id) {
 
 // async function  getMetaDataByVersionPV(product,version) {
 //   const getQuery=`SELECT * FROM metadata where "Product"=$1 AND version=$2`;
-//   const data = await poolpimd.query(getQuery, [product,version]);
+//   const data = await poolmwp.query(getQuery, [product,version]);
 //   if (data.rows.length == 0) {
 //     return {
 //       error: true,
@@ -561,9 +561,9 @@ async function deleteMetadatadb(id) {
 // ) {
 
 //   try {
-//     await poolpimd.query("BEGIN");
+//     await poolmwp.query("BEGIN");
 //     const getQuery=`SELECT * FROM metadata where latest=true AND "Product"=$1`
-//     const data=await poolpimd.query(getQuery,[Product])
+//     const data=await poolmwp.query(getQuery,[Product])
 //     if(data.rowCount==0){
 //       return {
 //         error: true,
@@ -573,10 +573,10 @@ async function deleteMetadatadb(id) {
 //     }
 //     const {version}=data.rows[0];
 //     const newVersion=version+1;
-//     await poolpimd.query(`Update metadata SET latest=$1 where "Product"=$2 ANd version=$3 `,[false,Product,version])
+//     await poolmwp.query(`Update metadata SET latest=$1 where "Product"=$2 ANd version=$3 `,[false,Product,version])
 //     const metaQuery = `INSERT INTO metadata("Product",data,version,latest,user_id,"createdDate") VALUES($1,$2,$3,$4,$5,$6)`;
 
-//     await poolpimd.query(metaQuery, [
+//     await poolmwp.query(metaQuery, [
 //       Product,
 //       metadata,
 //       newVersion,
@@ -584,7 +584,7 @@ async function deleteMetadatadb(id) {
 //       user_id,
 //       new Date()
 //     ]);
-//     const result = await poolpimd.query(
+//     const result = await poolmwp.query(
 //       `SELECT * FROM metadata where "version"=$1 And "Product"=$2`,
 //       [newVersion,Product]
 //     );
@@ -595,10 +595,10 @@ async function deleteMetadatadb(id) {
 //         errorMessage: `Error in update metadata`,
 //       };
 //     }
-//     await poolpimd.query("COMMIT");
+//     await poolmwp.query("COMMIT");
 //     return result.rows[0];
 //   } catch (error) {
-//     await poolpimd.query("ROLLBACK");
+//     await poolmwp.query("ROLLBACK");
 //     return {
 //       error: true,
 //       errorCode: 500,
@@ -612,7 +612,7 @@ async function deleteMetadatadb(id) {
 //   try {
 //     // Ensure the SQL query matches the actual column storing the product name
 //     const metaDataQuery = `DELETE FROM metadata WHERE "product_name" = $1;`;
-//     const result = await poolpimd.query(metaDataQuery, [product]);
+//     const result = await poolmwp.query(metaDataQuery, [product]);
 
 //     // If no rows were deleted, handle it as an error
 //     if (result.rowCount === 0) {
@@ -642,7 +642,7 @@ async function deleteMetadatadb(id) {
 //   const values = [agency_name];
 
 //   try {
-//     const result = await poolpimd.query(query, values);
+//     const result = await poolmwp.query(query, values);
 
 //     if (result.rows.length === 0) {
 //       throw new Error(`No data found for agency_name: ${agency_name}`);
@@ -659,7 +659,7 @@ async function deleteMetadatadb(id) {
 
 
 module.exports = {
-  poolpimd,
+  poolmwp,
 
   EmailValidation,
   updatePassword,

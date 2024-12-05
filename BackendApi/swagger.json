@@ -3,7 +3,7 @@
   "info": {
     "title": "NMDS Api",
     "version": "1.0.0",
-    "description": "API for PIMD_USER authentication, product management including product creation."
+    "description": "API for mwp_admin authentication, product management including product creation."
   },
   "servers": [
     {
@@ -18,7 +18,7 @@
   "paths": {
     "/api/signin": {
   "post": {
-    "summary": "Sign in PIMD_USER",
+    "summary": "Sign in mwp_admin",
     "tags": ["Signin"],
     "parameters": [
       {
@@ -32,7 +32,7 @@
         }
       }
     ],
-    "description": "Authenticate a PIMD_USER by validating username and password and return an access token.",
+    "description": "Authenticate a mwp_admin by validating username and password and return an access token.",
     "requestBody": {
       "required": true,
       "content": {
@@ -42,11 +42,11 @@
             "properties": {
               "username": {
                 "type": "string",
-                "example": "PIMD_user"
+                "example": "mwp_admin"
               },
               "password": {
                 "type": "string",
-                "example": "PIMDUSER123"
+                "example": "mwpUSER123"
               }
             },
             "required": ["username", "password"]
@@ -67,11 +67,11 @@
                   "properties": {
                     "username": {
                       "type": "string",
-                      "example": "pimd"
+                      "example": "mwp"
                     },
                     "usertype": {
                       "type": "string",
-                      "example": "PIMD_USER"
+                      "example": "mwp_admin"
                     },
                     "token": {
                       "type": "string",
@@ -127,7 +127,7 @@
     }
   }
 },
-"/api/pimd/user": {
+"/api/mwp/user": {
     "post": {
       "security": [
         {
@@ -169,11 +169,11 @@
                   "data": {
                     "type": "object",
                     "properties": {
-                      "username": { "type": "string", "example": "pimd" },
-                      "title": { "type": "string", "example": "pimd" },
-                      "name": { "type": "string", "example": "pimd" },
+                      "username": { "type": "string", "example": "mwp" },
+                      "title": { "type": "string", "example": "mwp" },
+                      "name": { "type": "string", "example": "mwp" },
                       "email": { "type": "string", "example": "xyz@gmail.com" },
-                      "phone": { "type": "string", "example": "pimd" },
+                      "phone": { "type": "string", "example": "mwp" },
                       "address": { "type": "string", "example": "abcd 14/6" }
                     }
                   },
@@ -234,11 +234,11 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "username": { "type": "string", "example": "pimd" },
-                        "title": { "type": "string", "example": "pimd" },
-                        "name": { "type": "string", "example": "pimd" },
+                        "username": { "type": "string", "example": "mwp" },
+                        "title": { "type": "string", "example": "mwp" },
+                        "name": { "type": "string", "example": "mwp" },
                         "email": { "type": "string", "example": "xyz@gmail.com" },
-                        "phone": { "type": "string", "example": "pimd" },
+                        "phone": { "type": "string", "example": "mwp" },
                         "address": { "type": "string", "example": "abcd 14/6" }
                       }
                     }
@@ -280,7 +280,7 @@
     }
   },
 
-"/api/pimd/user/{username}": {
+"/api/mwp/user/{username}": {
       "get": {
         "security": [
           {
@@ -289,7 +289,7 @@
         ],
         "tags": ["User Management"],
         "summary": "Get a user by username",
-        "description": "Retrieves the details of a user by username. Only users with the title 'PIMD_user' can access this endpoint.",
+        "description": "Retrieves the details of a user by username. Only users with the title 'mwp_admin' can access this endpoint.",
         "parameters": [
           {
             "name": "username",
@@ -312,11 +312,11 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "username": { "type": "string", "example": "pimd" },
-                        "title": { "type": "string", "example": "pimd" },
-                        "name": { "type": "string", "example": "pimd" },
+                        "username": { "type": "string", "example": "mwp" },
+                        "title": { "type": "string", "example": "mwp" },
+                        "name": { "type": "string", "example": "mwp" },
                         "email": { "type": "string", "example": "xyz@gmail.com" },
-                        "phone": { "type": "string", "example": "pimd" },
+                        "phone": { "type": "string", "example": "mwp" },
                         "address": { "type": "string", "example": "abcd 14/6" }
                       }
                     },
@@ -363,7 +363,7 @@
         ],
         "tags": ["User Management"],
         "summary": "Delete a user by username",
-        "description": "Deletes a user by username. Only users with the title 'PIMD_user' can delete users, except 'PIMD_user' itself.",
+        "description": "Deletes a user by username. Only users with the title 'mwp_admin' can delete users, except 'mwp_admin' itself.",
         "parameters": [
           {
             "name": "username",
@@ -426,7 +426,7 @@
         ],
         "tags": ["User Management"],
         "summary": "Update a user by username",
-        "description": "Updates a user's details. Only users with the title 'PIMD_user' can update other users.",
+        "description": "Updates a user's details. Only users with the title 'mwp_admin' can update other users.",
         "parameters": [
           {
             "name": "username",
@@ -445,8 +445,8 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "title": { "type": "string", "example": "pimd" },
-                  "name": { "type": "string", "example": "pimd" },
+                  "title": { "type": "string", "example": "mwp" },
+                  "name": { "type": "string", "example": "mwp" },
                   "email": { "type": "string", "example": "xyz@gmail.com" },
                   "phone": { "type": "string", "example": "1234567890" },
                   "address": { "type": "string", "example": "abcd 14/6" },
@@ -467,9 +467,9 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "username": { "type": "string", "example": "pimd" },
-                        "title": { "type": "string", "example": "pimd" },
-                        "name": { "type": "string", "example": "pimd" },
+                        "username": { "type": "string", "example": "mwp" },
+                        "title": { "type": "string", "example": "mwp" },
+                        "name": { "type": "string", "example": "mwp" },
                         "email": { "type": "string", "example": "xyz@gmail.com" },
                         "phone": { "type": "string", "example": "1234567890" },
                         "address": { "type": "string", "example": "abcd 14/6" }
@@ -513,7 +513,7 @@
     },
 
     
-    "/api/pimd/product": {
+    "/api/mwp/product": {
       "post": {
         "security": [
           {
@@ -657,7 +657,7 @@
             }
           },
           "405": {
-            "description": "Unauthorized user (only pimd can create the product)",
+            "description": "Unauthorized user (only mwp can create the product)",
             "content": {
               "application/json": {
                 "schema": {
@@ -665,7 +665,7 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "example": "Only pimd can create the product"
+                      "example": "Only mwp can create the product"
                     }
                   }
                 }
@@ -697,7 +697,7 @@
           }
         ],
         "summary": "Get All Products",
-        "description": "Retrieve all products. Only pimd or domain users can access.",
+        "description": "Retrieve all products. Only mwp or domain users can access.",
         "tags": ["Products"],
         "responses": {
           "200": {
@@ -712,7 +712,7 @@
             }
           },
           "405": {
-            "description": "Only pimd or domain users can access the product data"
+            "description": "Only mwp or domain users can access the product data"
           },
           "500": {
             "description": "Unable to fetch product data"
@@ -720,7 +720,7 @@
         }
       }
     },
-    "/api/pimd/product/{productId}": {
+    "/api/mwp/product/{productId}": {
       "get": {
         "summary": "Get Product by ID",
         "description": "Retrieve a product by its ID",
@@ -755,7 +755,7 @@
             "description": "Product ID is required"
           },
           "405": {
-            "description": "Only pimd or domain users can access the product data"
+            "description": "Only mwp or domain users can access the product data"
           },
           "500": {
             "description": "Unable to fetch product data"
@@ -763,7 +763,7 @@
         }
       }
     },
-    "/api/pimd/product/{id}": {
+    "/api/mwp/product/{id}": {
       "put": {
         "summary": "Update product",
         "tags": ["Products"],
@@ -772,7 +772,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Update an existing product. Only pimd and domain users can edit products.",
+        "description": "Update an existing product. Only mwp and domain users can edit products.",
         "parameters": [
           {
             "name": "id",
@@ -912,7 +912,7 @@
             }
           },
           "405": {
-            "description": "Unauthorized user (only pimd and domain users can edit the product)",
+            "description": "Unauthorized user (only mwp and domain users can edit the product)",
             "content": {
               "application/json": {
                 "schema": {
@@ -920,7 +920,7 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "example": "Only pimd and domain users can edit"
+                      "example": "Only mwp and domain users can edit"
                     }
                   }
                 }
@@ -953,7 +953,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Delete an existing product. Only PIMD_USER can delete products.",
+        "description": "Delete an existing product. Only mwp_admin can delete products.",
         "parameters": [
           {
             "name": "id",
@@ -991,7 +991,7 @@
             }
           },
           "405": {
-            "description": "Unauthorized user (only pimd can delete the product)",
+            "description": "Unauthorized user (only mwp can delete the product)",
             "content": {
               "application/json": {
                 "schema": {
@@ -999,7 +999,7 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "example": "Only pimd can delete the product"
+                      "example": "Only mwp can delete the product"
                     }
                   }
                 }
@@ -1025,11 +1025,11 @@
         }
       }
     },
-    "/api/pimd/agency": {
+    "/api/mwp/agency": {
       "post": {
         "summary": "Create agency",
         "tags": ["Agencies"],
-        "description": "Create a new agency in the system. Only PIMD_USER can create agencys.",
+        "description": "Create a new agency in the system. Only mwp_admin can create agencys.",
         "security": [
           {
             "bearerAuth": []
@@ -1097,7 +1097,7 @@
             }
           },
           "403": {
-            "description": "Only PIMD_USER can create agencys",
+            "description": "Only mwp_admin can create agencys",
             "content": {
               "application/json": {
                 "schema": {
@@ -1105,7 +1105,7 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "example": "Only pimd can create the agency"
+                      "example": "Only mwp can create the agency"
                     }
                   }
                 }
@@ -1131,10 +1131,10 @@
         }
       }
     },
-    "/api/pimd/agency ": {
+    "/api/mwp/agency ": {
       "get": {
         "summary": "Get All agencys",
-        "description": "Retrieve all agencies. Only pimd, developers, or domain users can access.",
+        "description": "Retrieve all agencies. Only mwp, developers, or domain users can access.",
         "tags": ["Agencies"],
         "security": [
           {
@@ -1162,7 +1162,7 @@
         }
       }
     },
-    "/api/pimd/agency/{agency_name}": {
+    "/api/mwp/agency/{agency_name}": {
       "get": {
         "summary": "Get agency by agency_name",
         "tags": ["Agencies"],
@@ -1256,7 +1256,7 @@
             }
           ],
           "tags": ["Agencies"],
-          "description": "Update an existing agency. Only PIMD_USER and users with role ID 1 or 2 can edit agencies.",
+          "description": "Update an existing agency. Only mwp_admin and users with role ID 1 or 2 can edit agencies.",
           "parameters": [
             {
               "name": "agency_name",
@@ -1355,7 +1355,7 @@
       "delete": {
       "summary": "Delete agency by agency_name",
       "tags": ["Agencies"],
-      "description": "Delete a agency by its agency_name. Only PIMD_USER can delete agencys.",
+      "description": "Delete a agency by its agency_name. Only mwp_admin can delete agencys.",
       "security": [
         {
           "bearerAuth": []
@@ -1395,7 +1395,7 @@
           }
         },
         "403": {
-          "description": "Unauthorized user (only pimd can delete agencys)",
+          "description": "Unauthorized user (only mwp can delete agencys)",
           "content": {
             "application/json": {
               "schema": {
@@ -1403,7 +1403,7 @@
                 "properties": {
                   "error": {
                     "type": "string",
-                    "example": "Only pimd can delete the agency"
+                    "example": "Only mwp can delete the agency"
                   }
                 }
               }
@@ -1446,11 +1446,11 @@
     }
   
     },
-"/api/pimd/metadata/{Product}": {
+"/api/mwp/metadata/{Product}": {
 
     "put": {
       "summary": "Update Metadata",
-      "description": "Update metadata for a product. Only PIMD_USER or the owner of the product can update metadata.",
+      "description": "Update metadata for a product. Only mwp_admin or the owner of the product can update metadata.",
       "tags": ["Metadata"],
       "security": [
         {
@@ -1519,7 +1519,7 @@
           }
         },
         "403": {
-          "description": "Invalid user. Only pimd or authorized users can update metadata.",
+          "description": "Invalid user. Only mwp or authorized users can update metadata.",
           "content": {
             "application/json": {
               "schema": {
@@ -1527,7 +1527,7 @@
                 "properties": {
                   "error": {
                     "type": "string",
-                    "example": "Invalid user. Only pimd or authorized users can update metadata."
+                    "example": "Invalid user. Only mwp or authorized users can update metadata."
                   }
                 }
               }
@@ -1640,7 +1640,7 @@
       }
     ],
     "summary": "Delete Metadata",
-    "description": "Delete metadata for a specific product. Only pimd or the product owner can delete metadata.",
+    "description": "Delete metadata for a specific product. Only mwp or the product owner can delete metadata.",
     "tags": ["Metadata"],
     "parameters": [
       {
@@ -1680,7 +1680,7 @@
         }
       },
       "403": {
-        "description": "Unauthorized user (only pimd or product owner can delete metadata)",
+        "description": "Unauthorized user (only mwp or product owner can delete metadata)",
         "content": {
           "application/json": {
             "schema": {
@@ -1688,7 +1688,7 @@
               "properties": {
                 "error": {
                   "type": "string",
-                  "example": "Only pimd or product owner can delete the metadata"
+                  "example": "Only mwp or product owner can delete the metadata"
                 }
               }
             }
@@ -1714,7 +1714,7 @@
     }
   }
 },
-"/api/pimd/metadata/version": {
+"/api/mwp/metadata/version": {
   "get": {
     "summary": "Get Metadata by Product and Version",
      "security": [
@@ -1802,7 +1802,7 @@
   }
 }
 ,
-"/api/pimd/metadata": {
+"/api/mwp/metadata": {
   "post": {
      "security": [
           {
@@ -1810,7 +1810,7 @@
           }
         ],
     "summary": "Create Metadata",
-    "description": "Create metadata for a product. Only PIMD_USER can create metadata.",
+    "description": "Create metadata for a product. Only mwp_admin can create metadata.",
     "tags": ["Metadata"],
     "requestBody": {
       "required": true,
@@ -1866,7 +1866,7 @@
         }
       },
       "405": {
-        "description": "Only PIMD_USER can create metadata",
+        "description": "Only mwp_admin can create metadata",
         "content": {
           "application/json": {
             "schema": {
@@ -1874,7 +1874,7 @@
               "properties": {
                 "error": {
                   "type": "string",
-                  "example": "Only PIMD_USER can create metadata."
+                  "example": "Only mwp_admin can create metadata."
                 }
               }
             }

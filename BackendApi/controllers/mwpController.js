@@ -2,8 +2,8 @@
 
 const { generateAccessToken } = require("../helper_utils/generateAccessToken");
 const bcrypt = require("bcrypt");
-const pimddb = require("../DbQuery/dbOperationpimd");
-const { poolpimd } = require('../DbQuery/dbOperationpimd');
+const mwpdb = require("../DbQuery/dbOperationmwp");
+const { poolmwp } = require('../DbQuery/dbOperationmwp');
 // var AES = require("crypto-js/aes");
 const {
   EmailValidation,
@@ -32,7 +32,7 @@ const {
   // getMetaDatadb,
   // searchMetaDatadb,
   // getMetadataByAgencydb
-} = pimddb;
+} = mwpdb;
 
 
 
@@ -73,7 +73,7 @@ const signin = async (req, res) => {
       return res.status(403).json({ error: 'Invalid credentials' });
     }
 
-    const pimdAccessToken = generateAccessToken({
+    const mwpAccessToken = generateAccessToken({
       username: UsersDetail.username,
       user_id: UsersDetail.user_id,
     });
@@ -85,13 +85,13 @@ const signin = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     };
 
-    res.cookie('pimdAccessToken', pimdAccessToken, cookieOptions);
+    res.cookie('mwpAccessToken', mwpAccessToken, cookieOptions);
 
     return res.status(200).json({
       data: {
         username,
         usertype : UsersDetail.usertype,
-        token: pimdAccessToken,
+        token: mwpAccessToken,
       },
       userverified: true,
       statusCode: true,
@@ -121,7 +121,7 @@ const changePassword = async (req, res) => {
 
     // Fetch the user based on the username
     const userQuery = "SELECT * FROM users WHERE username = $1";
-    const userResult = await poolpimd.query(userQuery, [username]);
+    const userResult = await poolmwp.query(userQuery, [username]);
     const user = userResult.rows[0];
 
     if (!user) {
@@ -167,9 +167,9 @@ const createUser = async (req, res) => {
     return res.status(400).json({ error: "usertype is required" });
   }
 
-  // Only users with usertype "PIMD_USER" can create new users
-  if (user.usertype !== "PIMD_USER") {
-    return res.status(405).json({ error: "Only PIMD_USER can create a user" });
+  // Only users with usertype "mwp_admin" can create new users
+  if (user.usertype !== "mwp_admin") {
+    return res.status(405).json({ error: "Only mwp_admin can create a user" });
   }
 
 
@@ -196,10 +196,10 @@ const createUser = async (req, res) => {
 };
 const getUser=async(req,res)=>{
   const user = req.user;
-    if (user.usertype != "PIMD_USER") {
+    if (user.usertype != "mwp_admin") {
       return res
         .status(405)
-        .json({ error: `Only PIMD_USER can get the users` });
+        .json({ error: `Only mwp_admin can get the users` });
     }
   try {
 
@@ -225,9 +225,9 @@ const updateUser = async (req, res) => {
   let { name, email, phone, address } = req.body;
   const user = req.user;
 
-  // Check if the user is allowed to perform the update (PIMD_USER type)
-  if (user.usertype !== "PIMD_USER") {
-    return res.status(405).json({ error: `Only PIMD_USER can update the user` });
+  // Check if the user is allowed to perform the update (mwp_admin type)
+  if (user.usertype !== "mwp_admin") {
+    return res.status(405).json({ error: `Only mwp_admin can update the user` });
   }
 
   try {
@@ -251,11 +251,11 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   let { username } = req.params;
   const user = req.user;
-  if (user.usertype !== "PIMD_USER"){
-    return res.status(405).json({ error: `Only PIMD_USER can delete the user` });
+  if (user.usertype !== "mwp_admin"){
+    return res.status(405).json({ error: `Only mwp_admin can delete the user` });
   }
-  if (username == "PIMD_user"){
-    return res.status(405).json({ error: `you can not delete PIMD_USER` });
+  if (username == "mwp_admin"){
+    return res.status(405).json({ error: `you can not delete mwp_admin` });
   }
   try {
     const deletedUser = await deleteUserDb(username);
@@ -279,10 +279,10 @@ const createagency = async (req, res) => {
   try {
     const user = req.user;  // Assuming the JWT middleware is setting the `user` object
 
-    if (user.usertype !== "PIMD_USER") {
+    if (user.usertype !== "mwp_admin") {
       return res
         .status(405)
-        .json({ error: `Only PIMD_USER can create agency` });
+        .json({ error: `Only mwp_admin can create agency` });
     }
 
     const agencyDetails = {
@@ -317,10 +317,10 @@ const getagency = async (req, res) => {
   try {
     const user = req.user;
 
-    if (user.usertype !== "PIMD_USER" ) {
+    if (user.usertype !== "mwp_admin" ) {
       return res
         .status(405)
-        .json({ error: `Only PIMD user or Nodal user can get agency` });
+        .json({ error: `Only mwp user or Nodal user can get agency` });
     }
 
     const agency = await getagencydb();
@@ -345,11 +345,11 @@ const updateagency = async (req, res) => {
   const { agency_name: new_agency_name } = req.body; // New agency name from the request body
   const user = req.user;
 
-  // Check if the user has appropriate roles or is a PIMD_USER
-  if (user.usertype !== "PIMD_USER") {
+  // Check if the user has appropriate roles or is a mwp_admin
+  if (user.usertype !== "mwp_admin") {
     return res
       .status(405)
-      .json({ error: `Only PIMD_USER can update the agency` });
+      .json({ error: `Only mwp_admin can update the agency` });
   }
 
   // Validate inputs
@@ -383,10 +383,10 @@ const deleteagency = async (req, res) => {
   const { agency_name } = req.params;
   const user = req.user;
   
-  if (user.usertype !== "PIMD_USER" ) {
+  if (user.usertype !== "mwp_admin" ) {
     return res
       .status(405)
-      .json({ error: `Only PIMD_USER can delete Agency` });
+      .json({ error: `Only mwp_admin can delete Agency` });
   }
   if (!agency_name) {
     return res.status(405).json({ error: `Agency name does not exist` });
@@ -683,7 +683,7 @@ const deleteMetadata = async (req, res) => {
 
 //     const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
 
-//     if(user.usertype=="PIMD_USER" || hasRole1or2 ){
+//     if(user.usertype=="mwp_admin" || hasRole1or2 ){
 //       const result = await updateMetadatadb(
 //         Product,
 //         metadata,
@@ -722,10 +722,10 @@ const deleteMetadata = async (req, res) => {
 //     const hasRole1 = userRoles.includes(1);
     
 //     // Permission Check
-//     if (user.usertype !== "PIMD_USER" && !hasRole1) {
+//     if (user.usertype !== "mwp_admin" && !hasRole1) {
 //       return res
 //         .status(403)
-//         .json({ error: "Only PIMD_USER or User with role 1 can delete the METADATA" });
+//         .json({ error: "Only mwp_admin or User with role 1 can delete the METADATA" });
 //     }
     
 //     // Check if product is provided

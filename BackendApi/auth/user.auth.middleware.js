@@ -25,7 +25,7 @@ const verifyJWT = async (req, res, next) => {
     const user = userDetail.rows[0];
 
     if (!user) {
-      return res.status(400).json({ error: "Invalid pimd Access Token" });
+      return res.status(400).json({ error: "Invalid mwp Access Token" });
     }
     const User = {
       username: user.username,

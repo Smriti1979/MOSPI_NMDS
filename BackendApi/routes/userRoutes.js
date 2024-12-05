@@ -4,7 +4,7 @@
 const express = require("express");
 
 const { verifyJWT } = require("../auth/user.auth.middleware.js");
-const pimdController = require("../controllers/pimdController.js");
+const mwpController = require("../controllers/mwpController.js");
 const {
   signin,
   changePassword,
@@ -31,7 +31,7 @@ const {
   // getProduct,
   // getMetaDataByVersion,
   // getMetaDataByAgency
-} = pimdController;
+} = mwpController;
 const router = express.Router();
 
 const app = express();
@@ -45,32 +45,32 @@ router.route("/signin").post(signin);
 
 //USER
 
-router.route("/pimd/user").post(verifyJWT,createUser); 
-router.route("/pimd/user").get(verifyJWT,getUser);  
-router.route("/pimd/user/:username").delete(verifyJWT,deleteUser); 
-router.route("/pimd/user/:username").put(verifyJWT,updateUser); 
+router.route("/mwp/user").post(verifyJWT,createUser); 
+router.route("/mwp/user").get(verifyJWT,getUser);  
+router.route("/mwp/user/:username").delete(verifyJWT,deleteUser); 
+router.route("/mwp/user/:username").put(verifyJWT,updateUser); 
 
 router.route("/user/changepassword").put(changePassword);
 
 //AGENCY
-router.route("/pimd/agency").post(verifyJWT, createagency);
-router.route("/pimd/agency/:agency_name").delete(verifyJWT, deleteagency);  
-router.route("/pimd/agency").get(verifyJWT, getagency); 
-router.route("/pimd/agency/:agency_name").put(verifyJWT, updateagency);
+router.route("/mwp/agency").post(verifyJWT, createagency);
+router.route("/mwp/agency/:agency_name").delete(verifyJWT, deleteagency);  
+router.route("/mwp/agency").get(verifyJWT, getagency); 
+router.route("/mwp/agency/:agency_name").put(verifyJWT, updateagency);
 
-router.route("/pimd/metadata").post(verifyJWT, createMetadata); 
+router.route("/mwp/metadata").post(verifyJWT, createMetadata); 
 router.route("/metadata").get(getAllMetadata);
-router.route("/pimd/metadata/:metadata_id").put(verifyJWT, updateMetadata);
-router.route("/pimd/metadata/:id").delete(verifyJWT, deleteMetadata);
+router.route("/mwp/metadata/:metadata_id").put(verifyJWT, updateMetadata);
+router.route("/mwp/metadata/:id").delete(verifyJWT, deleteMetadata);
 
-// router.route("/pimd/meta/search").get(searchMetaData); 
-// router.route("/pimd/metadata/version").get(verifyJWT, getMetaDataByVersion); 
-// router.route("/pimd/metadata/:Product").get(verifyJWT, getMetaDataByProductName);
-// // router.route("/pimd/metadata/:product_id").put(verifyJWT, updatedMetadata); 
-// router.route("/pimd/metadata/:product").delete(verifyJWT, deleteMetadata);
+// router.route("/mwp/meta/search").get(searchMetaData); 
+// router.route("/mwp/metadata/version").get(verifyJWT, getMetaDataByVersion); 
+// router.route("/mwp/metadata/:Product").get(verifyJWT, getMetaDataByProductName);
+// router.route("/mwp/metadata/:product_id").put(verifyJWT, updatedMetadata); 
+// router.route("/mwp/metadata/:product").delete(verifyJWT, deleteMetadata);
 
 
-// router.route("/pimd/metadata/:agency_name").get(verifyJWT, getMetaDataByAgency); 
+// router.route("/mwp/metadata/:agency_name").get(verifyJWT, getMetaDataByAgency); 
 
 
 
