@@ -19,7 +19,7 @@ db.sequelize = sequelize;
 db.users = require("./mwp/users")(sequelize, DataTypes);
 db.agencies = require("./mwp/agencies")(sequelize, DataTypes);
 db.metadata = require("./mwp/metadata")(sequelize, DataTypes);
-db.roles = require("./mwp/roles")(sequelize, DataTypes);
+// db.roles = require("./mwp/roles")(sequelize, DataTypes);
 db.userroles = require("./mwp/userroles")(sequelize, DataTypes);
 
 // Function to seed predefined agencies
@@ -64,44 +64,39 @@ const seedUsers = async () => {
 };
 
 // Function to seed predefined roles
-const seedRoles = async () => {
-  const predefinedRoles = [
-    "mad-edit",
-    "aad-create",
-    "aad-edit",
-    "aad-delete",
-    "au-create",
-    "au-edit",
-    "au-delete",
-    "au-approve",
-  ];
+// const seedRoles = async () => {
+//   const predefinedRoles = [
+//     "mad-edit",
+//     "aad-create",
+//     "aad-edit",
+//     "aad-delete",
+//     "au-create",
+//     "au-edit",
+//     "au-delete",
+//     "au-approve",
+//   ];
 
-  const existingRoles = await db.roles.findAll();
-  if (existingRoles.length >= predefinedRoles.length) {
-    console.log("Roles are already seeded.");
-    return;
-  }
+//   const existingRoles = await db.roles.findAll();
+//   if (existingRoles.length >= predefinedRoles.length) {
+//     console.log("Roles are already seeded.");
+//     return;
+//   }
 
-  for (const roleName of predefinedRoles) {
-    await db.roles.findOrCreate({
-      where: { role_name: roleName },
-    });
-  }
+//   for (const roleName of predefinedRoles) {
+//     await db.roles.findOrCreate({
+//       where: { role_name: roleName },
+//     });
+//   }
 
-  console.log("Predefined roles have been seeded successfully.");
-};
+//   console.log("Predefined roles have been seeded successfully.");
+// };
 
 // Function to seed predefined user roles
 const seedUserRoles = async () => {
   const predefinedUserRoles = [
-    { usertype: "mwp_admin", role_name: "mad-edit" },
-    { usertype: "mwp_admin", role_name: "aad-create" },
-    { usertype: "mwp_admin", role_name: "aad-delete" },
-    { usertype: "agency_admin", role_name: "aad-edit" },
-    { usertype: "agency_admin", role_name: "au-create" },
-    { usertype: "agency_admin", role_name: "au-delete" },
-    { usertype: "agency_admin", role_name: "au-approve" },
-    { usertype: "agency_user", role_name: "au-edit" },
+    { usertype: "mwp_admin", cancreate: "agency_admin", canupdate: "mwp_admin", candelete:"agency_admin" },
+    { usertype: "agency_admin", cancreate: "agency_user", canupdate: "agency_admin", candelete:"agency_user" },
+    { usertype: "agency_user", cancreate: "none", canupdate: "agency_user", candelete:"none" }
   ];
 
   const existingUserRoles = await db.userroles.findAll();
@@ -114,7 +109,9 @@ const seedUserRoles = async () => {
     await db.userroles.findOrCreate({
       where: {
         usertype: userRole.usertype,
-        role_name: userRole.role_name,
+        cancreate: userRole.cancreate,
+        canupdate: userRole.canupdate,
+        candelete: userRole.candelete,
       },
     });
   }
@@ -135,7 +132,7 @@ const initDatabase = async () => {
     // Seed data
     await seedAgencies();
     await seedUsers();
-    await seedRoles();
+    // await seedRoles();
     await seedUserRoles();
   } catch (error) {
     console.error("Error during database initialization:", error);

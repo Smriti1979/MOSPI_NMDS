@@ -7,24 +7,24 @@ module.exports = (sequelize, DataTypes) => {
           autoIncrement: true,
           primaryKey: true,
         },
-        usertype: {
+        usertype:{
           type: DataTypes.STRING,
-          allowNull: false,
+          unique:true,
+          allownull:false
         },
-        role_name: {
+        cancreate: {
           type: DataTypes.STRING,
-          allowNull: false,
-          references: {
-            model: "roles", // This assumes you already have a roles table
-            key: "role_name",
-          },
-          onUpdate: "CASCADE",
-          onDelete: "CASCADE",
         },
+        canupdate: {
+          type: DataTypes.STRING,
+        },
+        candelete: {
+          type: DataTypes.STRING,
+        }
       },
       {
         tableName: "userroles",
-        timestamps: false, // Disable created_at and updated_at
+        timestamps: false, 
         underscored: true,
       }
     );

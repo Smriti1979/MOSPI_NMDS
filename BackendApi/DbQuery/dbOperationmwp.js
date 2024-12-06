@@ -21,6 +21,45 @@ poolmwp.connect((err, client, release) => {
   release();
 });
 
+// const getAllowedRoles = async (usertype) => {
+//   try {
+//     // Query to fetch allowed roles for the logged-in user's usertype
+//     const result = await poolmwp.query(
+//       `SELECT ur.role_name 
+//        FROM userroles ur
+//        JOIN roles r ON ur.role_name = r.role_name
+//        WHERE ur.usertype = $1`,
+//       [usertype]
+//     );
+
+//     // Extract role names
+//     return result.rows.map((row) => row.role_name);
+//   } catch (error) {
+//     console.error("Error fetching allowed roles:", error);
+//     throw new Error("Failed to fetch allowed roles");
+//   }
+// };
+
+// const getRoleNameByUsertype = async (usertype) => {
+//   try {
+//     // Query to fetch role name for the specified usertype
+//     const result = await poolmwp.query(
+//       `SELECT r.role_name 
+//        FROM roles r
+//        WHERE r.usertype = $1`,
+//       [usertype]
+//     );
+
+//     // Return the role name (or null if not found)
+//     return result.rows[0]?.role_name || null;
+//   } catch (error) {
+//     console.error("Error fetching role name for usertype:", error);
+//     throw new Error("Failed to fetch role name for usertype");
+//   }
+// };
+
+
+
 async function EmailValidation(username) {
   const query = "SELECT * FROM users WHERE username = $1";
   const result = await poolmwp.query(query, [username]);
@@ -676,7 +715,9 @@ module.exports = {
   createMetadatadb,
   getAllMetadatadb,
   updateMetadatadb,
-  deleteMetadatadb
+  deleteMetadatadb,
+  // getAllowedRoles,
+  // getRoleNameByUsertype
 
   // getMetadataByAgencyIddb
 
