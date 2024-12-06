@@ -20,7 +20,12 @@ const {
   createMetadatadb,
   updateMetadatadb,
   getAllMetadatadb,
-  deleteMetadatadb
+  deleteMetadatadb,
+
+  allowedCreateOperations,
+  allowedDeleteOperations,
+  allowedUpdateOperations,
+  
 
   // getMetadataByAgencyIddb,
   // getMetaDataByProductNamedb,
@@ -160,20 +165,25 @@ const changePassword = async (req, res) => {
 
 const createUser = async (req, res) => {
   const { agency_id, username, password, usertype, name, email, phone, address } = req.body;
-  const user = req.user;
+  const user = req.user;  // Logged-in user details
 
   // Check required fields
   if (!usertype) {
     return res.status(400).json({ error: "usertype is required" });
   }
 
-  // Only users with usertype "mwp_admin" can create new users
-  if (user.usertype !== "mwp_admin") {
-    return res.status(405).json({ error: "Only mwp_admin can create a user" });
-  }
-
-
   try {
+    // Fetch allowed roles for the logged-in user
+    const allowed = await allowedCreateOperations(user.usertype);
+    console.log("Allowed operations:", allowed);
+
+    // Check if the logged-in user is allowed to create the requested user type
+    if (!allowed || !allowed.includes(usertype)) {
+      return res.status(405).json({
+        error: `You don't have access to create a user with usertype: ${usertype}`,
+      });
+    }
+
     // Call the database function to create the user and assign roles
     const newUser = await createUserdb(agency_id, username, password, usertype, name, email, phone, address);
 
@@ -188,12 +198,12 @@ const createUser = async (req, res) => {
       msg: "User created successfully",
       statusCode: true,
     });
-
   } catch (error) {
     console.error("Error creating user:", error);
-    return res.status(500).json({ error: `Error in creating user: ${error.message}` });
+    return res.status(500).json({ error: `Error creating user: ${error.message}` });
   }
 };
+
 const getUser=async(req,res)=>{
   const user = req.user;
     if (user.usertype != "mwp_admin") {
@@ -225,12 +235,18 @@ const updateUser = async (req, res) => {
   let { name, email, phone, address } = req.body;
   const user = req.user;
 
-  // Check if the user is allowed to perform the update (mwp_admin type)
-  if (user.usertype !== "mwp_admin") {
-    return res.status(405).json({ error: `Only mwp_admin can update the user` });
-  }
-
   try {
+
+    const allowed = await allowedUpdateOperations(user.usertype);
+    console.log("Allowed operations:", allowed);
+
+    // Check if the logged-in user is allowed to create the requested user type
+    if (!allowed || !allowed.includes(usertype)) {
+      return res.status(405).json({
+        error: `You don't have access to update a user with usertype: ${usertype}`,
+      });
+    }
+
     const updatedUser = await updateUserDb(username, name, email, phone, address);
 
     if (updatedUser.error) {
@@ -251,13 +267,18 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   let { username } = req.params;
   const user = req.user;
-  if (user.usertype !== "mwp_admin"){
-    return res.status(405).json({ error: `Only mwp_admin can delete the user` });
-  }
-  if (username == "mwp_admin"){
-    return res.status(405).json({ error: `you can not delete mwp_admin` });
-  }
   try {
+
+    const allowed = await allowedDeleteOperations(user.usertype);
+    console.log("Allowed operations:", allowed);
+
+    // Check if the logged-in user is allowed to create the requested user type
+    if (!allowed || !allowed.includes(usertype)) {
+      return res.status(405).json({
+        error: `You don't have access to delete a user with usertype: ${usertype}`,
+      });
+    }
+
     const deletedUser = await deleteUserDb(username);
     if (deletedUser.error == true) {
       return res.status(404).json({ error: deletedUser.errorMessage });

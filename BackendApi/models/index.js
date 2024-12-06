@@ -94,9 +94,9 @@ const seedUsers = async () => {
 // Function to seed predefined user roles
 const seedUserRoles = async () => {
   const predefinedUserRoles = [
-    { usertype: "mwp_admin", cancreate: "agency_admin", canupdate: "mwp_admin", candelete:"agency_admin" },
-    { usertype: "agency_admin", cancreate: "agency_user", canupdate: "agency_admin", candelete:"agency_user" },
-    { usertype: "agency_user", cancreate: "none", canupdate: "agency_user", candelete:"none" }
+    { usertype: "mwp_admin", cancreate: "agency_admin", canupdate: "mwp_admin", candelete:"agency_admin", canread:"agency_admin" },
+    { usertype: "agency_admin", cancreate: "agency_user", canupdate: "agency_admin", candelete:"agency_user", canread:"agency_user" },
+    { usertype: "agency_user", cancreate: "none", canupdate: "agency_user", candelete:"none", canread: "none" }
   ];
 
   const existingUserRoles = await db.userroles.findAll();
@@ -112,6 +112,7 @@ const seedUserRoles = async () => {
         cancreate: userRole.cancreate,
         canupdate: userRole.canupdate,
         candelete: userRole.candelete,
+        canread: userRole.canread
       },
     });
   }

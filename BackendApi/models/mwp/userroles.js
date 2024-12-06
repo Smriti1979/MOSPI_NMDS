@@ -9,7 +9,6 @@ module.exports = (sequelize, DataTypes) => {
         },
         usertype:{
           type: DataTypes.STRING,
-          unique:true,
           allownull:false
         },
         cancreate: {
@@ -19,6 +18,9 @@ module.exports = (sequelize, DataTypes) => {
           type: DataTypes.STRING,
         },
         candelete: {
+          type: DataTypes.STRING,
+        },
+        canread: {
           type: DataTypes.STRING,
         }
       },

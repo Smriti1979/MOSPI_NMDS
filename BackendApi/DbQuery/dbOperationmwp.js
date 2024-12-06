@@ -58,6 +58,78 @@ poolmwp.connect((err, client, release) => {
 //   }
 // };
 
+const allowedCreateOperations = async (usertype) => {
+  try {
+    // Execute the query with a parameterized usertype
+    const result = await poolmwp.query(
+      `SELECT cancreate
+       FROM userroles
+       WHERE usertype = $1;`,
+      [usertype]
+    );
+
+    // Return the rows (or an empty array if no results)
+    return result.rows.map(row => row.cancreate);
+  } catch (error) {
+    console.error("Error fetching allowed create operations:", error);
+    throw new Error("Failed to fetch allowed create operations");
+  }
+};
+
+const allowedUpdateOperations = async (usertype) => {
+  try {
+    // Execute the query with a parameterized usertype
+    const result = await poolmwp.query(
+      `SELECT canupdate
+       FROM userroles
+       WHERE usertype = $1;`,
+      [usertype]
+    );
+
+    // Return the rows (or an empty array if no results)
+    return result.rows.map(row => row.canupdate);
+  } catch (error) {
+    console.error("Error fetching allowed update operations:", error);
+    throw new Error("Failed to fetch allowed update operations");
+  }
+};
+
+const allowedReadOperations = async (usertype) => {
+  try {
+    // Execute the query with a parameterized usertype
+    const result = await poolmwp.query(
+      `SELECT canread
+       FROM userroles
+       WHERE usertype = $1;`,
+      [usertype]
+    );
+
+    // Return the rows (or an empty array if no results)
+    return result.rows.map(row => row.canupdate);
+  } catch (error) {
+    console.error("Error fetching allowed read operations:", error);
+    throw new Error("Failed to fetch allowed read operations");
+  }
+};
+
+const allowedDeleteOperations = async (usertype) => {
+  try {
+    // Execute the query with a parameterized usertype
+    const result = await poolmwp.query(
+      `SELECT candelete
+       FROM userroles
+       WHERE usertype = $1;`,
+      [usertype]
+    );
+
+    // Return the rows (or an empty array if no results)
+    return result.rows.map(row => row.candelete);
+  } catch (error) {
+    console.error("Error fetching allowed delete operations:", error);
+    throw new Error("Failed to fetch allowed delete operations");
+  }
+};
+
 
 
 async function EmailValidation(username) {
@@ -716,6 +788,11 @@ module.exports = {
   getAllMetadatadb,
   updateMetadatadb,
   deleteMetadatadb,
+
+  allowedCreateOperations,
+  allowedDeleteOperations,
+  allowedUpdateOperations,
+  allowedReadOperations
   // getAllowedRoles,
   // getRoleNameByUsertype
 
