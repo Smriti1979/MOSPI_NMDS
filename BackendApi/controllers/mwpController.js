@@ -12,7 +12,7 @@ const {
   getagencydb,
   updateagencydb,
   deleteagencydb,
-
+  getUsertypeFromUsername,
   createUserdb,
   getUserdb,
   updateUserDb,
@@ -25,6 +25,7 @@ const {
   allowedCreateOperations,
   allowedDeleteOperations,
   allowedUpdateOperations,
+  allowedReadOperations
   
 
   // getMetadataByAgencyIddb,
@@ -165,14 +166,21 @@ const changePassword = async (req, res) => {
 
 const createUser = async (req, res) => {
   const { agency_id, username, password, usertype, name, email, phone, address } = req.body;
-  const user = req.user;  // Logged-in user details
+  const user = req.user;  
 
-  // Check required fields
   if (!usertype) {
     return res.status(400).json({ error: "usertype is required" });
   }
 
+  const requiredFields = ["agency_id", "username", "password", "usertype", "name", "email", "phone", "address"];
+  const missingFields = requiredFields.filter(field => !req.body[field]);
+  if (missingFields.length > 0) {
+      return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
+    }
+
   try {
+
+    
     // Fetch allowed roles for the logged-in user
     const allowed = await allowedCreateOperations(user.usertype);
     console.log("Allowed operations:", allowed);
@@ -205,12 +213,11 @@ const createUser = async (req, res) => {
 };
 
 const getUser=async(req,res)=>{
-  const user = req.user;
-    if (user.usertype != "mwp_admin") {
-      return res
-        .status(405)
-        .json({ error: `Only mwp_admin can get the users` });
-    }
+
+  const allowed = await allowedReadOperations(user.usertype);
+  console.log("Allowed operations:", allowed);
+  console.log(allowed);
+  
   try {
 
     const user = await getUserdb();
@@ -236,6 +243,15 @@ const updateUser = async (req, res) => {
   const user = req.user;
 
   try {
+
+    const userResult = await getUsertypeFromUsername(username);
+    if (!userResult || userResult.error) {
+      return res.status(404).json({
+        error: `User with username "${username}" not found.`,
+      });
+    }
+
+    const { usertype } = userResult;
 
     const allowed = await allowedUpdateOperations(user.usertype);
     console.log("Allowed operations:", allowed);
@@ -267,7 +283,17 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   let { username } = req.params;
   const user = req.user;
+
   try {
+
+    const userResult = await getUsertypeFromUsername(username);
+    if (!userResult || userResult.error) {
+      return res.status(404).json({
+        error: `User with username "${username}" not found.`,
+      });
+    }
+
+    const { usertype } = userResult;
 
     const allowed = await allowedDeleteOperations(user.usertype);
     console.log("Allowed operations:", allowed);

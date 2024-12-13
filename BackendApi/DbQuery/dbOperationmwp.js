@@ -152,35 +152,37 @@ async function updatePassword(userId, hashedPassword) {
 
 
 async function createUserdb(agency_id, username, password, usertype, name, email, phone, address) {
+  if (!agency_id || !username || !password || !usertype || !name || !email || !phone || !address) {
+      return { error: true, errorMessage: "All fields are required" };
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Start a transaction to ensure atomicity in creating a user and assigning roles
   const client = await poolmwp.connect();
+
   try {
-    await client.query('BEGIN');
+      await client.query('BEGIN');
 
-    // Insert the new user
-    const insertUserQuery = `
-      INSERT INTO users(agency_id, username, password, usertype, name, email, phone, address)
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING agency_id, username, password, usertype, name, email, phone, address
-    `;
-    const userResult = await client.query(insertUserQuery, [
-      agency_id, username, hashedPassword, usertype, name, email, phone, address
-    ]);
+      const insertUserQuery = `
+          INSERT INTO users(agency_id, username, password, usertype, name, email, phone, address)
+          VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+      `;
+      const userResult = await client.query(insertUserQuery, [
+          agency_id, username, hashedPassword, usertype, name, email, phone, address
+      ]);
 
-    const newUser = userResult.rows[0];
-
-    await client.query('COMMIT');
-    return newUser;
+      const newUser = userResult.rows[0];
+      await client.query('COMMIT');
+      return newUser;
 
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error("Error in createUserdb:", error.message);
-    return { error: true, errorMessage: `Unable to create user: ${error.message}` };
+      await client.query('ROLLBACK');
+      console.error("Error in createUserdb:", error.message);
+      return { error: true, errorMessage: `Unable to create user: ${error.message}` };
   } finally {
-    client.release();
+      client.release();
   }
 }
+
 async function getUserdb() {
   try {
     const query = `
@@ -249,7 +251,7 @@ async function updateUserDb(username, name, email, phone, address) {
 }
 
 async function deleteUserDb(username) {
-  const query = `DELETE FROM users WHERE username = $1 RETURNING *`;
+  const query = `DELETE FROM users WHERE username = $1`;
   const user = await poolmwp.query(query, [username]);
 
   if (user.rows.length === 0) {
@@ -262,6 +264,18 @@ async function deleteUserDb(username) {
   return user.rows[0];
 }
 
+async function getUsertypeFromUsername(username) {
+  const query = `SELECT usertype FROM users WHERE username = $1`;
+  try {
+    const result = await poolmwp.query(query, [username]);
+    if (result.rows.length === 0) {
+      return { error: true, errorMessage: "User not found." };
+    }
+    return result.rows[0]; // This will return { usertype: "some_usertype" }
+  } catch (error) {
+    return { error: true, errorMessage: error.message };
+  }
+}
 
 async function createagencydb(agency_name, created_by) {
   try {
@@ -788,6 +802,7 @@ module.exports = {
   getAllMetadatadb,
   updateMetadatadb,
   deleteMetadatadb,
+  getUsertypeFromUsername,
 
   allowedCreateOperations,
   allowedDeleteOperations,
