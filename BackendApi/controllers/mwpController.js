@@ -212,31 +212,36 @@ const createUser = async (req, res) => {
   }
 };
 
-const getUser=async(req,res)=>{
-
-  const allowed = await allowedReadOperations(user.usertype);
-  console.log("Allowed operations:", allowed);
-  console.log(allowed);
-  
+const getUser = async (req, res) => {
   try {
+    const { usertype } = req.user; 
 
-    const user = await getUserdb();
-    if (user.error == true) {
-      return res.status(400).json({ error: `User does not exist` });
+    const allowed = await allowedReadOperations(usertype);
+    if (!allowed || allowed.length === 0) {
+      return res.status(403).json({
+        error: "You do not have permission to view any user data",
+      });
     }
-    return res.status(201).send({
-      data: {
-        user
-      },
-      msg: "user creates successfully",
+
+    console.log("Allowed operations:", allowed);
+
+    const users = await getUserdb(allowed);
+    if (users.error) {
+      return res.status(400).json({ error: `Unable to fetch user data` });
+    }
+
+    return res.status(200).send({
+      data: users,
+      msg: "Users fetched successfully",
       statusCode: true,
     });
-
   } catch (error) {
-    return res.status(500).json({ error: `Error in getting all user ${error}` });
+    console.error("Error in getUser controller:", error);
+    return res
+      .status(500)
+      .json({ error: `Internal server error: ${error.message}` });
   }
-
-}
+};
 const updateUser = async (req, res) => {
   let { username } = req.params;
   let { name, email, phone, address } = req.body;

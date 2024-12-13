@@ -94,9 +94,9 @@ const allowedUpdateOperations = async (usertype) => {
   }
 };
 
+
 const allowedReadOperations = async (usertype) => {
   try {
-    // Execute the query with a parameterized usertype
     const result = await poolmwp.query(
       `SELECT canread
        FROM userroles
@@ -104,8 +104,8 @@ const allowedReadOperations = async (usertype) => {
       [usertype]
     );
 
-    // Return the rows (or an empty array if no results)
-    return result.rows.map(row => row.canupdate);
+    // Extract 'canread' permissions into an array
+    return result.rows.map((row) => row.canread);
   } catch (error) {
     console.error("Error fetching allowed read operations:", error);
     throw new Error("Failed to fetch allowed read operations");
@@ -183,7 +183,7 @@ async function createUserdb(agency_id, username, password, usertype, name, email
   }
 }
 
-async function getUserdb() {
+async function getUserdb(allowedUsertypes) {
   try {
     const query = `
       SELECT 
@@ -202,19 +202,21 @@ async function getUserdb() {
         agencies 
       ON 
         users.agency_id = agencies.agency_id
+      WHERE 
+        users.usertype = ANY($1); -- Filter by allowed user types
     `;
 
-    const user = await poolmwp.query(query);
+    const users = await poolmwp.query(query, [allowedUsertypes]);
 
-    if (user.rows.length === 0) {
+    if (users.rows.length === 0) {
       return {
         error: true,
         errorCode: 405,
-        errorMessage: "Unable to get user",
+        errorMessage: "No users found for the allowed user types",
       };
     }
 
-    return user.rows;
+    return users.rows;
   } catch (error) {
     console.error("Error fetching user data:", error);
     return {
@@ -224,7 +226,6 @@ async function getUserdb() {
     };
   }
 }
-
 async function updateUserDb(username, name, email, phone, address) {
   const query = `
     UPDATE users SET 
