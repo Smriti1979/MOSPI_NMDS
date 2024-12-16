@@ -25,7 +25,9 @@ const {
   allowedCreateOperations,
   allowedDeleteOperations,
   allowedUpdateOperations,
-  allowedReadOperations
+  allowedReadOperations,
+
+  getagencyidbyusernamedb
   
 
   // getMetadataByAgencyIddb,
@@ -65,7 +67,7 @@ const signin = async (req, res) => {
     }
 
     if (UsersDetail.newuser) {
-      return res.status(403).json({ 
+      return res.status(201).json({ 
         userverified: false 
       });
     }
@@ -460,11 +462,10 @@ const deleteagency = async (req, res) => {
   }
 };
 
-
 const createMetadata = async (req, res) => {
   try {
     const user = req.user;
-    console.log("user", user);
+    
 
     if (!user || !user.id) {
       return res.status(403).json({
@@ -472,44 +473,59 @@ const createMetadata = async (req, res) => {
         errorMessage: "Agency ID not found. Please log in again.",
       });
     }
+     
+  
+    const agency_id = await getagencyidbyusernamedb(user.username);
+    // Extract fields from the request body
+    const {
+      product_name,
+      contact,
+      statistical_presentation_and_description,
+      institutional_mandate,
+      quality_management,
+      accuracy_and_reliability,
+      timeliness,
+      coherence_and_comparability,
+      statistical_processing,
+      metadata_update,
+      released_data_link,
+    } = req.body;
 
-    // Use the agency_id from the logged-in user
-    const agency_id = user.id;
-
-    // Extract predefined fields from the request body
-    const { product_name, data, released_data_link } = req.body;
-
-    if (!agency_id || !product_name || !data || !released_data_link) {
+    // Validate required fields
+    if (!product_name || !released_data_link) {
       return res.status(400).json({
         error: true,
-        errorMessage: "product_name, and data are required fields.",
+        errorMessage: "Required fields: product_name and released_data_link.",
       });
     }
 
-    // Serialize the `data` object into a JSON string
-    const dataString = JSON.stringify(data);
-
-    // Prepare metadata details to be passed to the database function
+    // Prepare metadata details
     const metadataDetails = {
       agency_id,
       product_name,
-      data: Buffer.from(dataString), // Convert JSON string to Buffer for BLOB storage
+      contact,
+      statistical_presentation_and_description,
+      institutional_mandate,
+      quality_management,
+      accuracy_and_reliability,
+      timeliness,
+      coherence_and_comparability,
+      statistical_processing,
+      metadata_update,
       released_data_link,
-      created_by: user.username || "System", // Assume user info is available in the request
+      created_by: user.username || "System", // Default to "System" if no username
     };
 
-    // Call the database function to create the metadata
+    // Call database function
     const result = await createMetadatadb(metadataDetails);
 
-    // Handle error if the database operation fails
     if (result.error) {
       throw new Error(result.errorMessage);
     }
 
-    // Return successful response
     return res.status(201).json({
       data: result,
-      msg: "Metadata created successfully",
+      msg: "Metadata created successfully.",
       statusCode: 201,
     });
   } catch (error) {
@@ -520,6 +536,7 @@ const createMetadata = async (req, res) => {
     });
   }
 };
+
 
 const getAllMetadata = async (req, res) => {
   try {

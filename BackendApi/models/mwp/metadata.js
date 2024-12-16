@@ -25,9 +25,41 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      data: {
-        type: DataTypes.BLOB('long'), // Will map to bytea in PostgreSQL
-        allowNull: true,
+      contact:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      statistical_presentation_and_description:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      institutional_mandate:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      quality_management:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      accuracy_and_reliability:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      timeliness: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      coherence_and_comparability: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      statistical_processing:{
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      metadata_update:{
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       version: {
         type: DataTypes.INTEGER,

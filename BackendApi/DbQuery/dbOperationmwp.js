@@ -150,6 +150,31 @@ async function updatePassword(userId, hashedPassword) {
   return result.rows[0]; // Returns updated user details or undefined if no match
 }
 
+async function getagencyidbyusernamedb(username) {
+  try {
+    // Validate the input
+    if (!username) {
+      throw new Error("Username is required to fetch agency data.");
+    }
+
+    // Query to fetch agency_id from the users table
+    const query = `SELECT agency_id FROM users WHERE username = $1`;
+    const result = await poolmwp.query(query, [username]);
+
+    // Handle case where no rows are returned
+    if (result.rows.length === 0) {
+      throw new Error(`No agency found for username: ${username}`);
+    }
+
+    // Return the agency_id from the result
+    return result.rows[0].agency_id;
+  } catch (error) {
+    console.error("Error fetching agency data:", error.message);
+    throw new Error(`Error fetching agency ID for username: ${username}. ${error.message}`);
+  }
+}
+
+
 
 async function createUserdb(agency_id, username, password, usertype, name, email, phone, address) {
   if (!agency_id || !username || !password || !usertype || !name || !email || !phone || !address) {
@@ -392,59 +417,85 @@ async function deleteagencydb(agency_name) {
     };
   }
 }
-async function createMetadatadb({ agency_id, product_name, data, released_data_link, created_by }) {
+async function createMetadatadb({
+  agency_id,
+  product_name,
+  contact,
+  statistical_presentation_and_description,
+  institutional_mandate,
+  quality_management,
+  accuracy_and_reliability,
+  timeliness,
+  coherence_and_comparability,
+  statistical_processing,
+  metadata_update,
+  released_data_link,
+  created_by,
+}) {
   try {
     // Step 1: Check if the product with the same agency_id and product_name already exists
     const existingProductQuery = `
       SELECT metadata_id FROM metadata
       WHERE agency_id = $1 AND product_name = $2;
     `;
-
     const existingProductResult = await poolmwp.query(existingProductQuery, [agency_id, product_name]);
 
     if (existingProductResult.rows.length > 0) {
-      // If the product exists, return an error
       return {
         error: true,
         errorMessage: "Metadata with the same agency_id and product_name already exists.",
       };
     }
 
-    // Step 2: Find the max metadata_id for new products and initialize version
-    const maxMetadataQuery = `
-      SELECT MAX(metadata_id) AS max_metadata_id FROM metadata;
-    `;
-
+    // Step 2: Find the max metadata_id
+    const maxMetadataQuery = `SELECT MAX(metadata_id) AS max_metadata_id FROM metadata;`;
     const maxMetadataResult = await poolmwp.query(maxMetadataQuery);
+    const maxMetadataId = maxMetadataResult.rows[0]?.max_metadata_id || 0;
+    const metadataId = maxMetadataId + 1;
+    const version = 1; // Starting version for new metadata
 
-    const maxMetadataId = maxMetadataResult.rows[0].max_metadata_id || 0; // Default to 0 if no records exist
-    const metadataId = maxMetadataId + 1; // Increment for the new product
-    const version = 1; // Start version at 1 for new products
-
-    // Step 3: Insert the new metadata record with `latest_version = true`
+    // Step 3: Insert the new metadata record
     const insertQuery = `
       INSERT INTO metadata (
         metadata_id,
         agency_id,
         product_name,
-        data,
+        contact,
+        statistical_presentation_and_description,
+        institutional_mandate,
+        quality_management,
+        accuracy_and_reliability,
+        timeliness,
+        coherence_and_comparability,
+        statistical_processing,
+        metadata_update,
         released_data_link,
         created_by,
         created_at,
         latest_version,
         version
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8)
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+      )
       RETURNING *;
     `;
-
     const result = await poolmwp.query(insertQuery, [
       metadataId,
       agency_id,
       product_name,
-      data,
+      contact,
+      statistical_presentation_and_description,
+      institutional_mandate,
+      quality_management,
+      accuracy_and_reliability,
+      timeliness,
+      coherence_and_comparability,
+      statistical_processing,
+      metadata_update,
       released_data_link,
       created_by,
-      new Date(),
+      new Date(), // created_at
+      true, // latest_version
       version,
     ]);
 
@@ -456,7 +507,7 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
       };
     }
 
-    return result.rows[0]; // Return the newly created metadata
+    return result.rows[0]; // Return the created metadata
   } catch (error) {
     console.error("Error in createMetadatadb:", error);
     return {
@@ -465,6 +516,7 @@ async function createMetadatadb({ agency_id, product_name, data, released_data_l
     };
   }
 }
+
 async function updateMetadatadb({ metadata_id, agency_id, product_name, data, released_data_link, updated_by }) {
   try {
     // Step 1: Fetch the current metadata record to ensure it exists and retrieve version
@@ -808,7 +860,10 @@ module.exports = {
   allowedCreateOperations,
   allowedDeleteOperations,
   allowedUpdateOperations,
-  allowedReadOperations
+  allowedReadOperations,
+
+  getagencyidbyusernamedb
+  
   // getAllowedRoles,
   // getRoleNameByUsertype
 
