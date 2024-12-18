@@ -277,18 +277,31 @@ async function updateUserDb(username, name, email, phone, address) {
 }
 
 async function deleteUserDb(username) {
-  const query = `DELETE FROM users WHERE username = $1`;
-  const user = await poolmwp.query(query, [username]);
+  const query = `DELETE FROM users WHERE username = $1`; 
+  try {
+    const user = await poolmwp.query(query, [username]);
 
-  if (user.rows.length === 0) {
+    if (user.rowCount === 0) {
+      return {
+        error: true,
+        errorCode: 404,
+        errorMessage: `User not found`,
+      };
+    }
+
+    return {
+      error: false,
+      data: user.rows[0], // Return the deleted user information
+    };
+  } catch (err) {
     return {
       error: true,
-      errorCode: 404,
-      errorMessage: `User not found`,
+      errorCode: 500,
+      errorMessage: `Database error: ${err.message}`,
     };
   }
-  return user.rows[0];
 }
+
 
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;

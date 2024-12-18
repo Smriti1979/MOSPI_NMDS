@@ -292,8 +292,8 @@ const deleteUser = async (req, res) => {
   const user = req.user;
 
   try {
-
     const userResult = await getUsertypeFromUsername(username);
+    console.log("User result:", userResult);
     if (!userResult || userResult.error) {
       return res.status(404).json({
         error: `User with username "${username}" not found.`,
@@ -305,7 +305,6 @@ const deleteUser = async (req, res) => {
     const allowed = await allowedDeleteOperations(user.usertype);
     console.log("Allowed operations:", allowed);
 
-    // Check if the logged-in user is allowed to create the requested user type
     if (!allowed || !allowed.includes(usertype)) {
       return res.status(405).json({
         error: `You don't have access to delete a user with usertype: ${usertype}`,
@@ -313,17 +312,20 @@ const deleteUser = async (req, res) => {
     }
 
     const deletedUser = await deleteUserDb(username);
-    if (deletedUser.error == true) {
-      return res.status(404).json({ error: deletedUser.errorMessage });
+    if (deletedUser.error) {
+      return res.status(deletedUser.errorCode).json({ error: deletedUser.errorMessage });
     }
+
     return res.status(200).send({
       msg: "User deleted successfully",
+      deletedUser: deletedUser.data, // Optionally include deleted user info
       statusCode: true,
     });
   } catch (error) {
-    return res.status(500).json({ error: `Error deleting user: ${error}` });
+    return res.status(500).json({ error: `Error deleting user: ${error.message}` });
   }
 };
+
 
 
 //AGENCY
