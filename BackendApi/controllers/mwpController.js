@@ -4,6 +4,7 @@ const { generateAccessToken } = require("../helper_utils/generateAccessToken");
 const bcrypt = require("bcrypt");
 const mwpdb = require("../DbQuery/dbOperationmwp");
 const { poolmwp } = require('../DbQuery/dbOperationmwp');
+const validator = require('validator');
 // var AES = require("crypto-js/aes");
 const {
   EmailValidation,
@@ -44,6 +45,36 @@ const {
 
 
 
+function validateUserInput(data) {
+  const errors = [];
+
+  // Validate email format
+  if (!validator.isEmail(data.email)) {
+    errors.push("Invalid email format");
+  }
+
+  // Validate phone number (basic example, can be enhanced)
+  // const phoneRegex = /^[0-9]{10}$/;
+  // if (!phoneRegex.test(data.phone)) {
+  //   errors.push("Invalid phone number. It should be a 10-digit number.");
+  // }
+
+  // // Validate username (no spaces, no special characters)
+  // const usernameRegex = /^[a-zA-Z0-9_]+$/;
+  // if (!usernameRegex.test(data.username)) {
+  //   errors.push("Invalid username. Only alphanumeric characters and underscores are allowed.");
+  // }
+
+  // // Validate password (minimum 8 characters, at least one number, one special character)
+  // const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  // if (!passwordRegex.test(data.password)) {
+  //   errors.push(
+  //     "Invalid password. It must be at least 8 characters long and include one letter, one number, and one special character."
+  //   );
+  // }
+
+  return errors;
+}
 
 //SIGNIN
 
@@ -67,9 +98,13 @@ const signin = async (req, res) => {
     }
 
     if (UsersDetail.newuser) {
-      return res.status(201).json({ 
-        userverified: false 
-      });
+      const matchpassword = await bcrypt.compare(password, UsersDetail.password);
+      if(matchpassword){
+        return res.status(200).json({ userverified: false});
+      }
+      else {
+        return res.status(403).json({ error: 'Invalid credentials' });
+      }
     }
 
     if (!UsersDetail.password) {
@@ -109,9 +144,6 @@ const signin = async (req, res) => {
     return res.status(500).json({ error: 'An error occurred during sign-in.' });
   }
 };
-
-
-
 const changePassword = async (req, res) => {
   const { username, oldPassword, password, confirmPassword } = req.body;
 
@@ -119,7 +151,7 @@ const changePassword = async (req, res) => {
     // Validate input
     if (!username || !oldPassword || !password || !confirmPassword) {
       return res.status(400).json({
-        error: "Username, old password, new password, and confirm password are required.",
+        error: "Username, old password, password, and confirm password are required.",
       });
     }
 
@@ -168,21 +200,23 @@ const changePassword = async (req, res) => {
 
 const createUser = async (req, res) => {
   const { agency_id, username, password, usertype, name, email, phone, address } = req.body;
-  const user = req.user;  
-
-  if (!usertype) {
-    return res.status(400).json({ error: "usertype is required" });
-  }
+  const user = req.user;
 
   const requiredFields = ["agency_id", "username", "password", "usertype", "name", "email", "phone", "address"];
   const missingFields = requiredFields.filter(field => !req.body[field]);
+
+  // Check for missing required fields
   if (missingFields.length > 0) {
-      return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
-    }
+    return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
+  }
+
+  // Validate input data
+  const validationErrors = validateUserInput(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ error: `Validation errors: ${validationErrors.join(", ")}` });
+  }
 
   try {
-
-    
     // Fetch allowed roles for the logged-in user
     const allowed = await allowedCreateOperations(user.usertype);
     console.log("Allowed operations:", allowed);
@@ -194,7 +228,7 @@ const createUser = async (req, res) => {
       });
     }
 
-    // Call the database function to create the user and assign roles
+    // Call the database function to create the user
     const newUser = await createUserdb(agency_id, username, password, usertype, name, email, phone, address);
 
     // Check for errors from createUserdb
@@ -564,58 +598,10 @@ const getAllMetadata = async (req, res) => {
   }
 };
 
-const updateMetadata = async(req,res)=>{
-  try{
-    const user=req.user;
-    if(!user || !user.id){
-      return res.status(403).json({
-        error: true,
-        errorMessage: "Agency ID not found. Please log in again.",
-      });
-    }
-
-    const agency_id = user.id;
-    const {metadata_id }= req.params;
-    const { product_name, data, released_data_link } = req.body;
-
-    if (!metadata_id || !product_name || !data || !released_data_link) {
-      return res.status(400).json({
-        error: true,
-        errorMessage: "metadata_id, product_name, data, and released_data_link are required fields.",
-      });
-    }
-
-    const dataString = JSON.stringify(data);
-
-    const updateDetails = {
-      metadata_id,
-      agency_id,
-      product_name,
-      data: Buffer.from(dataString),
-      released_data_link,
-      updated_by: user.username || "System",
-    };
-
-    const result = await updateMetadatadb(updateDetails);
-
-    if (result.error) {
-      throw new Error(result.errorMessage);
-    }
-
-    return res.status(200).json({
-      data: result,
-      msg: "Metadata updated successfully",
-      statusCode: 200,
-    });
-
-  }catch(error){
-    console.error("Error in updateMetadata:", error);
-    return res.status(500).json({
-      error: true,
-      errorMessage: `Error in updating metadata: ${error.message}`,
-    });
-  }
+const updateMetadata = async (req, res) => {
+ 
 };
+
 
 const deleteMetadata = async (req, res) => {
   try {

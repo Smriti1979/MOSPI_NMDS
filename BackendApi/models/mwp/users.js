@@ -111,7 +111,7 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+        unique: false,
         validate: {
               notNull: { msg: "name is required" },
               len: { args: [2, 50], msg: "name must be between 2 and 50 characters" },

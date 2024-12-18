@@ -530,82 +530,10 @@ async function createMetadatadb({
   }
 }
 
-async function updateMetadatadb({ metadata_id, agency_id, product_name, data, released_data_link, updated_by }) {
-  try {
-    // Step 1: Fetch the current metadata record to ensure it exists and retrieve version
-    const currentMetadataQuery = `
-      SELECT * FROM metadata
-      WHERE metadata_id = $1 AND agency_id = $2 AND latest_version = true;
-    `;
-
-    const currentMetadataResult = await poolmwp.query(currentMetadataQuery, [metadata_id, agency_id]);
-
-    if (currentMetadataResult.rows.length === 0) {
-      return {
-        error: true,
-        errorMessage: "No existing metadata found for the provided metadata_id and agency_id.",
-      };
-    }
-
-    const currentMetadata = currentMetadataResult.rows[0];
-    const newVersion = currentMetadata.version + 1;
-
-    // Step 2: Update `latest_version` to false for the current metadata record
-    const updateLatestVersionQuery = `
-      UPDATE metadata
-      SET latest_version = false, updated_at = $1, updated_by = $2
-      WHERE metadata_id = $3 AND agency_id = $4 AND latest_version = true;
-    `;
-
-    await poolmwp.query(updateLatestVersionQuery, [new Date(), updated_by, metadata_id, agency_id]);
-
-    // Step 3: Insert a new metadata record with updated details and `latest_version = true`
-    const insertQuery = `
-      INSERT INTO metadata (
-        metadata_id,
-        agency_id,
-        product_name,
-        data,
-        released_data_link,
-        created_by,
-        created_at,
-        updated_by,
-        updated_at,
-        latest_version,
-        version
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, $10)
-      RETURNING *;
-    `;
-
-    const result = await poolmwp.query(insertQuery, [
-      metadata_id,
-      agency_id,
-      product_name,
-      data,
-      released_data_link,
-      currentMetadata.created_by, // Preserve original creator
-      currentMetadata.created_at, // Preserve original created_at timestamp
-      updated_by,
-      new Date(),
-      newVersion,
-    ]);
-
-    if (result.rows.length === 0) {
-      return {
-        error: true,
-        errorMessage: "Failed to update metadata.",
-      };
-    }
-
-    return result.rows[0]; // Return the newly created metadata version
-  } catch (error) {
-    console.error("Error in updateMetadatadb:", error);
-    return {
-      error: true,
-      errorMessage: `Error in updateMetadatadb: ${error.message}`,
-    };
-  }
+async function updateMetadatadb(){
 }
+
+
 async function getAllMetadatadb() {
   try {
     const query = `
