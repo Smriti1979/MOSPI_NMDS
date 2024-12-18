@@ -52,7 +52,7 @@ function validateUserInput(data) {
 
   // Validate email format
   if (!validator.isEmail(data.email)) {
-    errors.push("Invalid email format");
+    errors.push("Invalid email format. Email should contain @ and a domain name.");
   }
 
   // Validate phone number (basic example, can be enhanced)
@@ -105,7 +105,7 @@ const signin = async (req, res) => {
         return res.status(200).json({ userverified: false});
       }
       else {
-        return res.status(403).json({ error: 'Invalid credentials' });
+        return res.status(403).json({ error: 'Password did not match.' });
       }
     }
 
@@ -115,7 +115,7 @@ const signin = async (req, res) => {
 
     const correctpassword = await bcrypt.compare(password, UsersDetail.password);
     if (!correctpassword) {
-      return res.status(403).json({ error: 'Invalid credentials' });
+      return res.status(403).json({ error: 'Incorrect password.' });
     }
 
     const mwpAccessToken = generateAccessToken({
@@ -135,6 +135,7 @@ const signin = async (req, res) => {
     return res.status(200).json({
       data: {
         username,
+        message: 'Sign-in successful',
         usertype : UsersDetail.usertype,
         token: mwpAccessToken,
       },
@@ -153,12 +154,12 @@ const changePassword = async (req, res) => {
     // Validate input
     if (!username || !oldPassword || !password || !confirmPassword) {
       return res.status(400).json({
-        error: "Username, old password, password, and confirm password are required.",
+        error: "All fields (username, old password, password, confirm password) are required.",
       });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ error: "New password and confirm password do not match." });
+      return res.status(400).json({ error: "New password and confirm password did not match." });
     }
 
     // Fetch the user based on the username
@@ -196,7 +197,6 @@ const changePassword = async (req, res) => {
     return res.status(500).json({ error: "Server error during password change." });
   }
 };
-
 
 //USER
 
@@ -241,7 +241,7 @@ const createUser = async (req, res) => {
     // Success response with the new user (excluding password)
     return res.status(201).json({
       data: newUser,
-      msg: "User created successfully",
+      message: "User created successfully",
       statusCode: true,
     });
   } catch (error) {
@@ -261,8 +261,6 @@ const getUser = async (req, res) => {
       });
     }
 
-    console.log("Allowed operations:", allowed);
-
     const users = await getUserdb(allowed);
     if (users.error) {
       return res.status(400).json({ error: `Unable to fetch user data` });
@@ -270,7 +268,7 @@ const getUser = async (req, res) => {
 
     return res.status(200).send({
       data: users,
-      msg: "Users fetched successfully",
+      message: "Users fetched successfully",
       statusCode: true,
     });
   } catch (error) {
@@ -297,7 +295,6 @@ const updateUser = async (req, res) => {
     const { usertype } = userResult;
 
     const allowed = await allowedUpdateOperations(user.usertype);
-    console.log("Allowed operations:", allowed);
 
     // Check if the logged-in user is allowed to create the requested user type
     if (!allowed || !allowed.includes(usertype)) {
@@ -315,7 +312,7 @@ const updateUser = async (req, res) => {
     // Return the updated user details
     return res.status(200).json({
       data: updatedUser,  // Send the updated user object
-      msg: "User updated successfully",
+      message: "User updated successfully",
       statusCode: true,
     });
   } catch (error) {
@@ -352,7 +349,7 @@ const deleteUser = async (req, res) => {
     }
 
     return res.status(200).send({
-      msg: "User deleted successfully",
+      message: "User deleted successfully",
       deletedUser: deletedUser.data, // Optionally include deleted user info
       statusCode: true,
     });
@@ -408,7 +405,7 @@ const createagency = async (req, res) => {
 
     return res.status(201).send({
       data: result,
-      msg: "Agency created successfully",
+      message: "Agency created successfully",
       statusCode: true,
     });
   } catch (error) {
@@ -437,7 +434,7 @@ const getagency = async (req, res) => {
 
     return res.status(200).send({
       data: agency,
-      msg: "agency data",
+      message: "agency data",
       statusCode: true,
     });
   } catch (error) {
@@ -473,7 +470,7 @@ const updateagency = async (req, res) => {
 
     return res.status(200).send({
       data: agency,
-      msg: "Agency updated successfully",
+      message: "Agency updated successfully",
       statusCode: true,
     });
   } catch (error) {
@@ -521,8 +518,7 @@ const createMetadata = async (req, res) => {
 
     if (!user || !user.id) {
       return res.status(403).json({
-        error: true,
-        errorMessage: "Agency ID not found. Please log in again.",
+        error: "Agency ID not found. Please log in again."
       });
     }
      
@@ -546,8 +542,7 @@ const createMetadata = async (req, res) => {
     // Validate required fields
     if (!product_name || !released_data_link) {
       return res.status(400).json({
-        error: true,
-        errorMessage: "Required fields: product_name and released_data_link.",
+        error: "Required fields: product_name and released_data_link."
       });
     }
 
@@ -577,14 +572,13 @@ const createMetadata = async (req, res) => {
 
     return res.status(201).json({
       data: result,
-      msg: "Metadata created successfully.",
+      message: "Metadata created successfully.",
       statusCode: 201,
     });
   } catch (error) {
     console.error("Error in createMetadata:", error);
     return res.status(500).json({
-      error: true,
-      errorMessage: `Error in creating metadata: ${error.message}`,
+      error: `Error in creating metadata: ${error.message}`
     });
   }
 };
@@ -596,21 +590,19 @@ const getAllMetadata = async (req, res) => {
 
     if (result.error) {
       return res.status(500).json({
-        error: true,
-        errorMessage: result.errorMessage,
+        error: result.errorMessage
       });
     }
 
     return res.status(200).json({
       error: false,
       data: result.data,
-      msg: "Metadata fetched successfully.",
+      message: "Metadata fetched successfully.",
     });
   } catch (error) {
     console.error("Error in getAllMetadata:", error);
     return res.status(500).json({
-      error: true,
-      errorMessage: `Error in getAllMetadata: ${error.message}`,
+      error: `Error in getAllMetadata: ${error.message}`
     });
   }
 };
@@ -622,7 +614,7 @@ const updateMetadata = async (req, res) => {
 
     // Validate metadata ID
     if (!metadataId) {
-      return res.status(400).json({ message: "Metadata ID is required" });
+      return res.status(400).json({ error: "Metadata ID is required" });
     }
 
     // Call the function to update the database
@@ -631,11 +623,11 @@ const updateMetadata = async (req, res) => {
     if (result.success) {
       return res.status(200).json({ message: "Metadata updated successfully", data: result.data });
     } else {
-      return res.status(500).json({ message: result.message });
+      return res.status(500).json({ error: result.message });
     }
   } catch (error) {
     console.error("Error updating metadata:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -649,11 +641,11 @@ const searchMetadata = async (req, res) => {
     if (result.success) {
       return res.status(200).json({ message: "Metadata retrieved successfully", data: result.data });
     } else {
-      return res.status(404).json({ message: "No metadata found matching the criteria" });
+      return res.status(404).json({ error: "No metadata found matching the criteria" });
     }
   } catch (error) {
     console.error("Error retrieving metadata:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -664,8 +656,7 @@ const deleteMetadata = async (req, res) => {
 
     if (!id) {
       return res.status(400).json({
-        error: true,
-        errorMessage: "id is required.",
+        error: "id is required."
       });
     }
 
@@ -673,20 +664,17 @@ const deleteMetadata = async (req, res) => {
 
     if (result.error) {
       return res.status(404).json({
-        error: true,
-        errorMessage: result.errorMessage,
+        error: result.errorMessage
       });
     }
 
     return res.status(200).json({
-      error: false,
-      message: result.message,
+      message: "Metadata deleted successfully",
     });
   } catch (error) {
     console.error("Error in deleteMetadata:", error);
     return res.status(500).json({
-      error: true,
-      errorMessage: `Error in deleteMetadata: ${error.message}`,
+      error: `Error in deleteMetadata: ${error.message}`
     });
   }
 };
@@ -864,7 +852,7 @@ const deleteMetadata = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findOne({ where: { username } });
+  const user = await user.findOne({ where: { username } });
 
   if (user && bcrypt.compareSync(password, user.password)) {
     const token = jwt.sign({ userId: user.id, role: user.roleId }, process.env.JWT_SECRET, {
