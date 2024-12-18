@@ -530,10 +530,103 @@ async function createMetadatadb({
   }
 }
 
-async function updateMetadatadb(){
+async function updateMetadatadb(metadataId, updatedData) {
+  const client = await poolmwp.connect(); // Ensure you're using the proper database connection
+  try {
+    await client.query("BEGIN");
+
+    // Fetch the most recent row for the given metadata ID
+    const { rows } = await client.query(
+      `SELECT * FROM metadata 
+       WHERE metadata_id = $1 AND latest_version = true 
+       ORDER BY version DESC 
+       LIMIT 1`,
+      [metadataId]
+    );
+
+    if (rows.length === 0) {
+      return { success: false, message: "Metadata not found" };
+    }
+
+    const previousData = rows[0];
+    const newVersion = previousData.version + 1;
+
+    // Build the new data by merging provided fields with the previous data
+    const newData = {
+      product_name: updatedData.product_name || previousData.product_name,
+      contact: updatedData.contact || previousData.contact,
+      statistical_presentation_and_description:
+        updatedData.statistical_presentation_and_description ||
+        previousData.statistical_presentation_and_description,
+      institutional_mandate:
+        updatedData.institutional_mandate || previousData.institutional_mandate,
+      quality_management: updatedData.quality_management || previousData.quality_management,
+      accuracy_and_reliability:
+        updatedData.accuracy_and_reliability || previousData.accuracy_and_reliability,
+      timeliness: updatedData.timeliness || previousData.timeliness,
+      coherence_and_comparability:
+        updatedData.coherence_and_comparability || previousData.coherence_and_comparability,
+      statistical_processing:
+        updatedData.statistical_processing || previousData.statistical_processing,
+      metadata_update: updatedData.metadata_update || previousData.metadata_update,
+      released_data_link:
+        updatedData.released_data_link || previousData.released_data_link,
+      metadata_id: metadataId,
+      agency_id: previousData.agency_id, // Keep the same agency_id as previous
+      version: newVersion,
+      latest_version: true,
+    };
+
+    // Mark the previous row as not the latest
+    await client.query(
+      `UPDATE metadata 
+       SET latest_version = false 
+       WHERE metadata_id = $1 AND version = $2`,
+      [metadataId, previousData.version]
+    );
+
+    // Insert the new version
+    const insertQuery = `
+      INSERT INTO metadata (
+        metadata_id, agency_id, product_name, contact, 
+        statistical_presentation_and_description, institutional_mandate, 
+        quality_management, accuracy_and_reliability, timeliness, 
+        coherence_and_comparability, statistical_processing, metadata_update, 
+        released_data_link, version, latest_version
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+      ) RETURNING *`;
+
+    const insertValues = [
+      newData.metadata_id,
+      newData.agency_id,
+      newData.product_name,
+      newData.contact,
+      newData.statistical_presentation_and_description,
+      newData.institutional_mandate,
+      newData.quality_management,
+      newData.accuracy_and_reliability,
+      newData.timeliness,
+      newData.coherence_and_comparability,
+      newData.statistical_processing,
+      newData.metadata_update,
+      newData.released_data_link,
+      newData.version,
+      newData.latest_version,
+    ];
+
+    const insertResult = await client.query(insertQuery, insertValues);
+
+    await client.query("COMMIT");
+    return { success: true, data: insertResult.rows[0] };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error updating metadata:", error);
+    return { success: false, message: "Failed to update metadata" };
+  } finally {
+    client.release();
+  }
 }
-
-
 async function getAllMetadatadb() {
   try {
     const query = `

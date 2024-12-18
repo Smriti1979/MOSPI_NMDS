@@ -599,7 +599,27 @@ const getAllMetadata = async (req, res) => {
 };
 
 const updateMetadata = async (req, res) => {
- 
+  try {
+    const metadataId = req.params.id;
+    const updatedData = req.body;
+
+    // Validate metadata ID
+    if (!metadataId) {
+      return res.status(400).json({ message: "Metadata ID is required" });
+    }
+
+    // Call the function to update the database
+    const result = await updateMetadatadb(metadataId, updatedData);
+
+    if (result.success) {
+      return res.status(200).json({ message: "Metadata updated successfully", data: result.data });
+    } else {
+      return res.status(500).json({ message: result.message });
+    }
+  } catch (error) {
+    console.error("Error updating metadata:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 
