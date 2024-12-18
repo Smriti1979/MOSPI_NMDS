@@ -293,7 +293,6 @@ const deleteUser = async (req, res) => {
 
   try {
     const userResult = await getUsertypeFromUsername(username);
-    console.log("User result:", userResult);
     if (!userResult || userResult.error) {
       return res.status(404).json({
         error: `User with username "${username}" not found.`,
