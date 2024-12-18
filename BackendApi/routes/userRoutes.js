@@ -19,7 +19,8 @@ const {
   createMetadata,
   updateMetadata,
   getAllMetadata,
-  deleteMetadata
+  deleteMetadata,
+  searchMetadata
   // getProductById,
   // getMetaDataByProductName,
   // updateProduct,
@@ -61,6 +62,7 @@ router.route("/mwp/agency/:agency_name").put(verifyJWT, updateagency);
 router.route("/mwp/metadata").post(verifyJWT, createMetadata); 
 router.route("/metadata").get(getAllMetadata);
 router.route("/mwp/metadata/:id").put(verifyJWT, updateMetadata);
+router.route("/mwp/metadata/search").get(verifyJWT, searchMetadata);
 router.route("/mwp/metadata/:id").delete(verifyJWT, deleteMetadata);
 
 // router.route("/mwp/meta/search").get(searchMetaData); 

@@ -679,6 +679,52 @@ async function deleteMetadatadb(id) {
   }
 }
 
+async function searchMetadataDb(filters) {
+  const { product_name, version, agency_id } = filters;
+  const client = await poolmwp.connect(); // Ensure you're using the proper database connection
+  try {
+    const conditions = [];
+    const values = [];
+    let query = `SELECT * FROM metadata WHERE 1=1`;
+
+    // Add conditions based on the provided filters
+    if (product_name) {
+      conditions.push(`product_name ILIKE $${conditions.length + 1}`);
+      values.push(`%${product_name}%`); // Use ILIKE for case-insensitive partial match
+    }
+    if (version) {
+      conditions.push(`version = $${conditions.length + 1}`);
+      values.push(version);
+    }
+    if (agency_id) {
+      conditions.push(`agency_id = $${conditions.length + 1}`);
+      values.push(agency_id);
+    }
+
+    // Combine query with conditions
+    if (conditions.length > 0) {
+      query += ` AND ${conditions.join(" AND ")}`;
+    }
+
+    query += ` ORDER BY version DESC`; // Optional: Order by version for clarity
+
+    // Execute the query
+    const { rows } = await client.query(query, values);
+
+    if (rows.length === 0) {
+      return { success: false, data: [] };
+    }
+
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error("Error retrieving metadata:", error);
+    return { success: false, data: [], message: "Failed to retrieve metadata" };
+  } finally {
+    client.release();
+  }
+}
+
+
 
 // async function getMetaDataByProductNamedb(Product) {
 //   const getQuery = `SELECT * FROM  metadata where "product_name"=$1  AND  latest=true`;
@@ -889,6 +935,7 @@ module.exports = {
   getAllMetadatadb,
   updateMetadatadb,
   deleteMetadatadb,
+  searchMetadataDb,
   getUsertypeFromUsername,
 
   allowedCreateOperations,

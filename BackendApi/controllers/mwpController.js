@@ -22,6 +22,7 @@ const {
   updateMetadatadb,
   getAllMetadatadb,
   deleteMetadatadb,
+  searchMetadataDb,
 
   allowedCreateOperations,
   allowedDeleteOperations,
@@ -622,6 +623,24 @@ const updateMetadata = async (req, res) => {
   }
 };
 
+const searchMetadata = async (req, res) => {
+  try {
+    const { product_name, version, agency_id } = req.query;
+
+    // Call the database query function with the provided parameters
+    const result = await searchMetadataDb({ product_name, version, agency_id });
+
+    if (result.success) {
+      return res.status(200).json({ message: "Metadata retrieved successfully", data: result.data });
+    } else {
+      return res.status(404).json({ message: "No metadata found matching the criteria" });
+    }
+  } catch (error) {
+    console.error("Error retrieving metadata:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 const deleteMetadata = async (req, res) => {
   try {
@@ -857,7 +876,8 @@ module.exports = {
   createMetadata,
   getAllMetadata,
   updateMetadata,
-  deleteMetadata
+  deleteMetadata,
+  searchMetadata
 
 
   // getMetaDataByProductName,
