@@ -316,6 +316,26 @@ async function getUsertypeFromUsername(username) {
   }
 }
 
+async function getAllUserTypesDb() {
+  const client = await poolmwp.connect(); // Ensure you're using the proper database connection
+  try {
+    const query = `SELECT usertype FROM userroles`; // Adjust columns as necessary
+    const { rows } = await client.query(query);
+
+    if (rows.length === 0) {
+      return { success: false, data: [] };
+    }
+
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error("Error retrieving user types:", error);
+    return { success: false, data: [], message: "Failed to retrieve user types" };
+  } finally {
+    client.release();
+  }
+}
+
+
 async function createagencydb(agency_name, created_by) {
   try {
     const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1, $2) RETURNING *`;
@@ -943,8 +963,9 @@ module.exports = {
   allowedUpdateOperations,
   allowedReadOperations,
 
-  getagencyidbyusernamedb
-  
+  getagencyidbyusernamedb,
+  getAllUserTypesDb
+
   // getAllowedRoles,
   // getRoleNameByUsertype
 

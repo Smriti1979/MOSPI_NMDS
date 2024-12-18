@@ -16,6 +16,7 @@ const {
   getUser,
   deleteUser,
   updateUser,
+  getallusertypes,
   createMetadata,
   updateMetadata,
   getAllMetadata,
@@ -50,7 +51,7 @@ router.route("/mwp/user").post(verifyJWT,createUser);
 router.route("/mwp/user").get(verifyJWT,getUser);  
 router.route("/mwp/user/:username").delete(verifyJWT,deleteUser); 
 router.route("/mwp/user/:username").put(verifyJWT,updateUser); 
-
+router.route("/mwp/usertypes").get(verifyJWT, getallusertypes);
 router.route("/user/changepassword").put(changePassword);
 
 //AGENCY

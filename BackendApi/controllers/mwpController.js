@@ -29,7 +29,8 @@ const {
   allowedUpdateOperations,
   allowedReadOperations,
 
-  getagencyidbyusernamedb
+  getagencyidbyusernamedb,
+  getAllUserTypesDb
   
 
   // getMetadataByAgencyIddb,
@@ -360,6 +361,21 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const getallusertypes = async (req, res) => {
+  try {
+    // Call the database query function to get all user types
+    const result = await getAllUserTypesDb();
+
+    if (result.success) {
+      return res.status(200).json({ message: "User types retrieved successfully", data: result.data });
+    } else {
+      return res.status(404).json({ message: "No user types found" });
+    }
+  } catch (error) {
+    console.error("Error retrieving user types:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 //AGENCY
@@ -877,7 +893,8 @@ module.exports = {
   getAllMetadata,
   updateMetadata,
   deleteMetadata,
-  searchMetadata
+  searchMetadata,
+  getallusertypes
 
 
   // getMetaDataByProductName,
