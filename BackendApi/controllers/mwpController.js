@@ -133,9 +133,9 @@ const signin = async (req, res) => {
     res.cookie('mwpAccessToken', mwpAccessToken, cookieOptions);
 
     return res.status(200).json({
+      message: 'Sign-in successful',
       data: {
         username,
-        message: 'Sign-in successful',
         usertype : UsersDetail.usertype,
         agency_id: UsersDetail.agency_id,
         token: mwpAccessToken,
