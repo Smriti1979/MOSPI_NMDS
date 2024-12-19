@@ -96,26 +96,26 @@ const signin = async (req, res) => {
     // Validate email and fetch user details
     const UsersDetail = await EmailValidation(username);
     if (!UsersDetail || UsersDetail.error) {
-      return res.status(403).json({ error: 'Invalid credentials' });
+      return res.status(403).json({ error: 'Invalid credentials' , statuscode: 403});
     }
 
     if (UsersDetail.newuser) {
       const matchpassword = await bcrypt.compare(password, UsersDetail.password);
       if(matchpassword){
-        return res.status(200).json({ userverified: false});
+        return res.status(200).json({ userverified: false, statuscode: 200 });
       }
       else {
-        return res.status(403).json({ error: 'Password did not match.' });
+        return res.status(403).json({ error: 'Password did not match.', statuscode:403 });
       }
     }
 
     if (!UsersDetail.password) {
-      return res.status(403).json({ error: 'Invalid credentials' });
+      return res.status(403).json({ error: 'Invalid credentials', statuscode:403 });
     }
 
     const correctpassword = await bcrypt.compare(password, UsersDetail.password);
     if (!correctpassword) {
-      return res.status(403).json({ error: 'Incorrect password.' });
+      return res.status(403).json({ error: 'Incorrect password.', statuscode:403 });
     }
 
     const mwpAccessToken = generateAccessToken({
@@ -141,11 +141,11 @@ const signin = async (req, res) => {
         token: mwpAccessToken,
       },
       userverified: true,
-      statusCode: true,
+      statusCode: 200,
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'An error occurred during sign-in.' });
+    return res.status(500).json({ error: 'An error occurred during sign-in.', statuscode:500 });
   }
 };
 const changePassword = async (req, res) => {
@@ -156,11 +156,12 @@ const changePassword = async (req, res) => {
     if (!username || !oldPassword || !password || !confirmPassword) {
       return res.status(400).json({
         error: "All fields (username, old password, password, confirm password) are required.",
+        statuscode: 400
       });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ error: "New password and confirm password did not match." });
+      return res.status(400).json({ error: "New password and confirm password did not match.", statuscode:400 });
     }
 
     // Fetch the user based on the username
@@ -169,13 +170,13 @@ const changePassword = async (req, res) => {
     const user = userResult.rows[0];
 
     if (!user) {
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "User not found.", statuscode:404 });
     }
 
     // Verify the old password
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(400).json({ error: "Old password is incorrect." });
+      return res.status(400).json({ error: "Old password is incorrect.", statuscode:400 });
     }
 
     // Hash the new password
@@ -186,16 +187,17 @@ const changePassword = async (req, res) => {
     const updatedUser = await updatePassword(user.user_id, hashedPassword);
 
     if (!updatedUser) {
-      return res.status(500).json({ error: "Failed to update the password." });
+      return res.status(500).json({ error: "Failed to update the password.", statuscode:500 });
     }
 
     return res.status(200).json({
       message: "Password updated successfully.",
+      statuscode:200,
       user: { user_id: updatedUser.user_id, username: updatedUser.username },
     });
   } catch (error) {
     console.error("Error changing password:", error.message);
-    return res.status(500).json({ error: "Server error during password change." });
+    return res.status(500).json({ error: "Server error during password change.", statuscode:500 });
   }
 };
 
@@ -210,13 +212,13 @@ const createUser = async (req, res) => {
 
   // Check for missing required fields
   if (missingFields.length > 0) {
-    return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}` });
+    return res.status(400).json({ error: `Missing required fields: ${missingFields.join(", ")}`, statuscode:400 });
   }
 
   // Validate input data
   const validationErrors = validateUserInput(req.body);
   if (validationErrors.length > 0) {
-    return res.status(400).json({ error: `Validation errors: ${validationErrors.join(", ")}` });
+    return res.status(400).json({ error: `Validation errors: ${validationErrors.join(", ")}`, statuscode:400 });
   }
 
   try {
@@ -228,6 +230,7 @@ const createUser = async (req, res) => {
     if (!allowed || !allowed.includes(usertype)) {
       return res.status(405).json({
         error: `You don't have access to create a user with usertype: ${usertype}`,
+        statuscode:405
       });
     }
 
@@ -236,18 +239,18 @@ const createUser = async (req, res) => {
 
     // Check for errors from createUserdb
     if (newUser.error) {
-      return res.status(403).json({ error: newUser.errorMessage });
+      return res.status(403).json({ error: newUser.errorMessage, statuscode:403 });
     }
 
     // Success response with the new user (excluding password)
     return res.status(201).json({
       data: newUser,
       message: "User created successfully",
-      statusCode: true,
+      statusCode: 201,
     });
   } catch (error) {
     console.error("Error creating user:", error);
-    return res.status(500).json({ error: `Error creating user: ${error.message}` });
+    return res.status(500).json({ error: `Error creating user: ${error.message}`, statuscode:500 });
   }
 };
 
@@ -259,24 +262,25 @@ const getUser = async (req, res) => {
     if (!allowed || allowed.length === 0) {
       return res.status(403).json({
         error: "You do not have permission to view any user data",
+        statuscode:403
       });
     }
 
     const users = await getUserdb(allowed);
     if (users.error) {
-      return res.status(400).json({ error: `Unable to fetch user data` });
+      return res.status(400).json({ error: `Unable to fetch user data`, statuscode:400 });
     }
 
     return res.status(200).send({
       data: users,
       message: "Users fetched successfully",
-      statusCode: true,
+      statusCode: 200
     });
   } catch (error) {
     console.error("Error in getUser controller:", error);
     return res
       .status(500)
-      .json({ error: `Internal server error: ${error.message}` });
+      .json({ error: `Internal server error: ${error.message}`, statuscode:500 });
   }
 };
 const updateUser = async (req, res) => {
@@ -290,6 +294,7 @@ const updateUser = async (req, res) => {
     if (!userResult || userResult.error) {
       return res.status(404).json({
         error: `User with username "${username}" not found.`,
+        statuscode:404
       });
     }
 
@@ -301,23 +306,24 @@ const updateUser = async (req, res) => {
     if (!allowed || !allowed.includes(usertype)) {
       return res.status(405).json({
         error: `You don't have access to update a user with usertype: ${usertype}`,
+        statuscode:405
       });
     }
 
     const updatedUser = await updateUserDb(username, name, email, phone, address);
 
     if (updatedUser.error) {
-      return res.status(updatedUser.errorCode || 500).json({ error: updatedUser.errorMessage });
+      return res.status(updatedUser.errorCode || 500).json({ error: updatedUser.errorMessage, statuscode:updatedUser.errorCode || 500 });
     }
 
     // Return the updated user details
     return res.status(200).json({
       data: updatedUser,  // Send the updated user object
       message: "User updated successfully",
-      statusCode: true,
+      statusCode: 200,
     });
   } catch (error) {
-    return res.status(500).json({ error: `Error updating user: ${error.message || error}` });
+    return res.status(500).json({ error: `Error updating user: ${error.message || error}`, statuscode:500 });
   }
 };
 
@@ -330,6 +336,7 @@ const deleteUser = async (req, res) => {
     if (!userResult || userResult.error) {
       return res.status(404).json({
         error: `User with username "${username}" not found.`,
+        statuscode:404
       });
     }
 
@@ -341,6 +348,7 @@ const deleteUser = async (req, res) => {
     if (!allowed || !allowed.includes(usertype)) {
       return res.status(405).json({
         error: `You don't have access to delete a user with usertype: ${usertype}`,
+        statuscode:405
       });
     }
 
@@ -352,10 +360,10 @@ const deleteUser = async (req, res) => {
     return res.status(200).send({
       message: "User deleted successfully",
       deletedUser: deletedUser.data, // Optionally include deleted user info
-      statusCode: true,
+      statusCode: 200
     });
   } catch (error) {
-    return res.status(500).json({ error: `Error deleting user: ${error.message}` });
+    return res.status(500).json({ error: `Error deleting user: ${error.message}`, statuscode:500 });
   }
 };
 
@@ -365,13 +373,13 @@ const getallusertypes = async (req, res) => {
     const result = await getAllUserTypesDb();
 
     if (result.success) {
-      return res.status(200).json({ message: "User types retrieved successfully", data: result.data });
+      return res.status(200).json({ message: "User types retrieved successfully", data: result.data, statusCode: 200 });
     } else {
-      return res.status(404).json({ message: "No user types found" });
+      return res.status(404).json({ message: "No user types found", statusCode: 404 });
     }
   } catch (error) {
     console.error("Error retrieving user types:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error", statusCode: 500 });
   }
 };
 
@@ -386,7 +394,7 @@ const createagency = async (req, res) => {
     if (user.usertype !== "mwp_admin") {
       return res
         .status(405)
-        .json({ error: `Only mwp_admin can create agency` });
+        .json({ error: `Only mwp_admin can create agency`, statuscode:405 });
     }
 
     const agencyDetails = {
@@ -401,19 +409,19 @@ const createagency = async (req, res) => {
     if (result?.error) {
       return res
         .status(result.errorCode || 500)
-        .json({ error: result.errorMessage });
+        .json({ error: result.errorMessage, statuscode:result.errorCode || 500 });
     }
 
     return res.status(201).send({
       data: result,
       message: "Agency created successfully",
-      statusCode: true,
+      statusCode: 201
     });
   } catch (error) {
     console.error(error);
     return res
       .status(500)
-      .json({ error: `Error in Creating agency: ${error.message}` });
+      .json({ error: `Error in Creating agency: ${error.message}`, statuscode:500 });
   }
 };
 
@@ -424,7 +432,7 @@ const getagency = async (req, res) => {
     if (user.usertype !== "mwp_admin" ) {
       return res
         .status(405)
-        .json({ error: `Only mwp user or Nodal user can get agency` });
+        .json({ error: `Only mwp user or Nodal user can get agency`, statuscode:405 });
     }
 
     const agency = await getagencydb();
@@ -436,11 +444,11 @@ const getagency = async (req, res) => {
     return res.status(200).send({
       data: agency,
       message: "agency data",
-      statusCode: true,
+      statusCode: 200
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: `Unable to get agency ${error}` });
+    return res.status(500).json({ error: `Unable to get agency ${error}`, statuscode:500 });
   }
 };
 
@@ -453,14 +461,14 @@ const updateagency = async (req, res) => {
   if (user.usertype !== "mwp_admin") {
     return res
       .status(405)
-      .json({ error: `Only mwp_admin can update the agency` });
+      .json({ error: `Only mwp_admin can update the agency`, statuscode:405 });
   }
 
   // Validate inputs
   if (!agency_name || !new_agency_name) {
     return res
       .status(405)
-      .json({ error: `agency_name (current and new) is required` });
+      .json({ error: `agency_name (current and new) is required`, statuscode:405 });
   }
 
   try {
@@ -472,14 +480,14 @@ const updateagency = async (req, res) => {
     return res.status(200).send({
       data: agency,
       message: "Agency updated successfully",
-      statusCode: true,
+      statusCode: 200
     });
   } catch (error) {
     console.error(error);
 
     return res
       .status(500)
-      .json({ error: `Error in updating agency data: ${error}` });
+      .json({ error: `Error in updating agency data: ${error}`, statuscode:500 });
   }
 };
 
@@ -490,10 +498,10 @@ const deleteagency = async (req, res) => {
   if (user.usertype !== "mwp_admin" ) {
     return res
       .status(405)
-      .json({ error: `Only mwp_admin can delete Agency` });
+      .json({ error: `Only mwp_admin can delete Agency`, statuscode:405 });
   }
   if (!agency_name) {
-    return res.status(405).json({ error: `Agency name does not exist` });
+    return res.status(405).json({ error: `Agency name does not exist`, statuscode:405 });
   }
 
   try {
@@ -503,12 +511,12 @@ const deleteagency = async (req, res) => {
     }
     return res
       .status(200)
-      .json({ message: "agency and associated data successfully deleted" });
+      .json({ message: "agency and associated data successfully deleted", statuscode:200 });
   } catch (error) {
     console.error(error);
     return res
       .status(500)
-      .json({ error: `Unable to delete the agency: ${error}` });
+      .json({ error: `Unable to delete the agency: ${error}`, statuscode:500 });
   }
 };
 
@@ -519,7 +527,8 @@ const createMetadata = async (req, res) => {
 
     if (!user || !user.id) {
       return res.status(403).json({
-        error: "Agency ID not found. Please log in again."
+        error: "Agency ID not found. Please log in again.",
+        statuscode:403
       });
     }
      
@@ -543,7 +552,8 @@ const createMetadata = async (req, res) => {
     // Validate required fields
     if (!product_name || !released_data_link) {
       return res.status(400).json({
-        error: "Required fields: product_name and released_data_link."
+        error: "Required fields: product_name and released_data_link.",
+        statuscode:400
       });
     }
 
@@ -579,7 +589,8 @@ const createMetadata = async (req, res) => {
   } catch (error) {
     console.error("Error in createMetadata:", error);
     return res.status(500).json({
-      error: `Error in creating metadata: ${error.message}`
+      error: `Error in creating metadata: ${error.message}`,
+      statuscode:500
     });
   }
 };
@@ -591,7 +602,8 @@ const getAllMetadata = async (req, res) => {
 
     if (result.error) {
       return res.status(500).json({
-        error: result.errorMessage
+        error: result.errorMessage,
+        statuscode:500
       });
     }
 
@@ -599,11 +611,13 @@ const getAllMetadata = async (req, res) => {
       error: false,
       data: result.data,
       message: "Metadata fetched successfully.",
+      statuscode:200
     });
   } catch (error) {
     console.error("Error in getAllMetadata:", error);
     return res.status(500).json({
-      error: `Error in getAllMetadata: ${error.message}`
+      error: `Error in getAllMetadata: ${error.message}`,
+      statuscode:500
     });
   }
 };
@@ -615,20 +629,20 @@ const updateMetadata = async (req, res) => {
 
     // Validate metadata ID
     if (!metadataId) {
-      return res.status(400).json({ error: "Metadata ID is required" });
+      return res.status(400).json({ error: "Metadata ID is required", statuscode:400 });
     }
 
     // Call the function to update the database
     const result = await updateMetadatadb(metadataId, updatedData);
 
     if (result.success) {
-      return res.status(200).json({ message: "Metadata updated successfully", data: result.data });
+      return res.status(200).json({ message: "Metadata updated successfully", data: result.data, statuscode:200 });
     } else {
-      return res.status(500).json({ error: result.message });
+      return res.status(500).json({ error: result.message, statuscode:500 });
     }
   } catch (error) {
     console.error("Error updating metadata:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
 
@@ -640,13 +654,13 @@ const searchMetadata = async (req, res) => {
     const result = await searchMetadataDb({ product_name, version, agency_id });
 
     if (result.success) {
-      return res.status(200).json({ message: "Metadata retrieved successfully", data: result.data });
+      return res.status(200).json({ message: "Metadata retrieved successfully", data: result.data, statuscode:200 });
     } else {
-      return res.status(404).json({ error: "No metadata found matching the criteria" });
+      return res.status(404).json({ error: "No metadata found matching the criteria", statuscode:404 });
     }
   } catch (error) {
     console.error("Error retrieving metadata:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
 
@@ -657,7 +671,8 @@ const deleteMetadata = async (req, res) => {
 
     if (!id) {
       return res.status(400).json({
-        error: "id is required."
+        error: "id is required.",
+        statuscode:400
       });
     }
 
@@ -665,17 +680,20 @@ const deleteMetadata = async (req, res) => {
 
     if (result.error) {
       return res.status(404).json({
-        error: result.errorMessage
+        error: result.errorMessage,
+        statuscode:404
       });
     }
 
     return res.status(200).json({
       message: "Metadata deleted successfully",
+      statuscode:200
     });
   } catch (error) {
     console.error("Error in deleteMetadata:", error);
     return res.status(500).json({
-      error: `Error in deleteMetadata: ${error.message}`
+      error: `Error in deleteMetadata: ${error.message}`,
+      statuscode:500
     });
   }
 };
@@ -861,7 +879,7 @@ exports.login = async (req, res) => {
     });
     res.json({ token });
   } else {
-    res.status(401).json({ message: 'Invalid credentials' });
+    res.status(401).json({ message: 'Invalid credentials', statuscode:401 });
   }
 };
 
