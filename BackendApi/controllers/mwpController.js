@@ -137,6 +137,7 @@ const signin = async (req, res) => {
         username,
         message: 'Sign-in successful',
         usertype : UsersDetail.usertype,
+        agency_id: UsersDetail.agency_id,
         token: mwpAccessToken,
       },
       userverified: true,
