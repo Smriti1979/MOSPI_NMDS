@@ -200,9 +200,19 @@ async function createUserdb(agency_id, username, password, usertype, name, email
       return newUser;
 
   } catch (error) {
-      await client.query('ROLLBACK');
-      console.error("Error in createUserdb:", error.message);
-      return { error: true, errorMessage: `Unable to create user: ${error.message}` };
+    await client.query('ROLLBACK');
+    console.error("Error in createUserdb:", error.message);
+
+    // Check for duplicate values based on PostgreSQL unique constraint error
+    if (error.code === '23505') {
+      const duplicateField = error.detail.match(/\((.*?)\)/)?.[1];
+      return {
+        error: true,
+        errorMessage: `Duplicate value for ${duplicateField}. Please provide a unique value.`,
+      };
+    }
+
+    return { error: true, errorMessage: "Unable to create user" };
   } finally {
       client.release();
   }
