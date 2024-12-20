@@ -429,11 +429,11 @@ const getagency = async (req, res) => {
   try {
     const user = req.user;
 
-    if (user.usertype !== "mwp_admin" ) {
-      return res
-        .status(405)
-        .json({ error: `Only mwp user or Nodal user can get agency`, statuscode:405 });
-    }
+    // if (user.usertype !== "mwp_admin" ) {
+    //   return res
+    //     .status(405)
+    //     .json({ error: `Only mwp user or Nodal user can get agency`, statuscode:405 });
+    // }
 
     const agency = await getagencydb();
 

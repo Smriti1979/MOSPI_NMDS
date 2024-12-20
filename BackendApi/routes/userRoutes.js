@@ -57,7 +57,7 @@ router.route("/user/changepassword").put(changePassword);
 //AGENCY
 router.route("/mwp/agency").post(verifyJWT, createagency);
 router.route("/mwp/agency/:agency_name").delete(verifyJWT, deleteagency);  
-router.route("/mwp/agency").get(verifyJWT, getagency); 
+router.route("/agency").get(getagency); 
 router.route("/mwp/agency/:agency_name").put(verifyJWT, updateagency);
 
 router.route("/mwp/metadata").post(verifyJWT, createMetadata); 
