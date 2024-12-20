@@ -142,7 +142,7 @@ module.exports = (sequelize, DataTypes) => {
         notNull: true,
       },
       phone: {
-          type: DataTypes.STRING,
+          type: DataTypes.INTEGER,
           allowNull: false,
           unique: true,
           validate: {
