@@ -310,6 +310,11 @@ const updateUser = async (req, res) => {
       });
     }
 
+    const validationErrors = validateUserInput(req.body);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ error: `Validation errors: ${validationErrors.join(", ")}`, statuscode:400 });
+    }
+
     const updatedUser = await updateUserDb(username, name, email, phone, address);
 
     if (updatedUser.error) {
