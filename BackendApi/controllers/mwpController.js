@@ -56,7 +56,7 @@ function validateUserInput(data) {
   }
 
   // Validate phone number (basic example, can be enhanced)
-  const phoneRegex = /^[0-9]$/;
+  const phoneRegex = /^[0-9]{7,10}$/;
   if (!phoneRegex.test(data.phone)) {
     errors.push("Invalid phone number.");
   }
