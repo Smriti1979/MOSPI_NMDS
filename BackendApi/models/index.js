@@ -63,34 +63,6 @@ const seedUsers = async () => {
   console.log("Predefined users have been seeded successfully.");
 };
 
-// Function to seed predefined roles
-// const seedRoles = async () => {
-//   const predefinedRoles = [
-//     "mad-edit",
-//     "aad-create",
-//     "aad-edit",
-//     "aad-delete",
-//     "au-create",
-//     "au-edit",
-//     "au-delete",
-//     "au-approve",
-//   ];
-
-//   const existingRoles = await db.roles.findAll();
-//   if (existingRoles.length >= predefinedRoles.length) {
-//     console.log("Roles are already seeded.");
-//     return;
-//   }
-
-//   for (const roleName of predefinedRoles) {
-//     await db.roles.findOrCreate({
-//       where: { role_name: roleName },
-//     });
-//   }
-
-//   console.log("Predefined roles have been seeded successfully.");
-// };
-
 // Function to seed predefined user roles
 const seedUserRoles = async () => {
   const predefinedUserRoles = [
