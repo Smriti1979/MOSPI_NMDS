@@ -56,10 +56,10 @@ function validateUserInput(data) {
   }
 
   // Validate phone number (basic example, can be enhanced)
-  // const phoneRegex = /^[0-9]{10}$/;
-  // if (!phoneRegex.test(data.phone)) {
-  //   errors.push("Invalid phone number. It should be a 10-digit number.");
-  // }
+  const phoneRegex = /^[0-9]$/;
+  if (!phoneRegex.test(data.phone)) {
+    errors.push("Invalid phone number.");
+  }
 
   // // Validate username (no spaces, no special characters)
   // const usernameRegex = /^[a-zA-Z0-9_]+$/;
@@ -220,7 +220,7 @@ const createUser = async (req, res) => {
   if (validationErrors.length > 0) {
     return res.status(400).json({ error: `Validation errors: ${validationErrors.join(", ")}`, statuscode:400 });
   }
-
+ 
   try {
     // Fetch allowed roles for the logged-in user
     const allowed = await allowedCreateOperations(user.usertype);
