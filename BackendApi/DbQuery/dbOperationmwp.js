@@ -660,7 +660,9 @@ async function updateMetadatadb(metadataId, updatedData) {
 async function getAllMetadatadb() {
   try {
     const query = `
-      SELECT metadata_id, agency_id, product_name, version, latest_version, released_data_link, created_by, created_at, updated_by, updated_at
+      SELECT metadata_id, agency_id, product_name, contact, statistical_presentation_and_description, institutional_mandate, quality_management,
+  accuracy_and_reliability, timeliness, coherence_and_comparability, statistical_processing, metadata_update, released_data_link
+ version, latest_version, released_data_link, created_by, created_at, updated_by, updated_at
       FROM metadata
       ORDER BY created_at DESC; -- Sort by creation time
     `;
