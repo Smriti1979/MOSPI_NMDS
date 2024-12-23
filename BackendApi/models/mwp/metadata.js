@@ -22,39 +22,39 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       contact:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       statistical_presentation_and_description:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       institutional_mandate:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       quality_management:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       accuracy_and_reliability:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       timeliness: {
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       coherence_and_comparability: {
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       statistical_processing:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       metadata_update:{
-        type: DataTypes.TEXT,
+        type: DataTypes.JSON,
         allowNull: false,
       },
       version: {
