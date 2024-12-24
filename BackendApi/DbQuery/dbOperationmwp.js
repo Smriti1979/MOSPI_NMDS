@@ -176,7 +176,7 @@ async function getagencyidbyusernamedb(username) {
 
 
 
-async function createUserdb(agency_id, username, password, usertype, name, email, phone, address) {
+async function createUserdb(agency_id, username, password, usertype, name, email, phone, address, created_by) {
   if (!agency_id || !username || !password || !usertype || !name || !email || !phone || !address) {
       return { error: true, errorMessage: "All fields are required" };
   }
@@ -188,11 +188,11 @@ async function createUserdb(agency_id, username, password, usertype, name, email
       await client.query('BEGIN');
 
       const insertUserQuery = `
-          INSERT INTO users(agency_id, username, password, usertype, name, email, phone, address)
-          VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+          INSERT INTO users(agency_id, username, password, usertype, name, email, phone, address, created_by)
+          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
       `;
       const userResult = await client.query(insertUserQuery, [
-          agency_id, username, hashedPassword, usertype, name, email, phone, address
+          agency_id, username, hashedPassword, usertype, name, email, phone, address, created_by
       ]);
 
       const newUser = userResult.rows[0];
@@ -575,36 +575,37 @@ async function updateMetadatadb(metadataId, updatedData) {
     );
 
     if (rows.length === 0) {
-      return { success: false, message: "Metadata not found" };
+      return { error: true, errorMessage: "Metadata not found." };
     }
 
     const previousData = rows[0];
     const newVersion = previousData.version + 1;
 
-    // Build the new data by merging provided fields with the previous data
+    // Merge provided fields with the previous data
     const newData = {
-      product_name: updatedData.product_name || previousData.product_name,
-      contact: updatedData.contact || previousData.contact,
+      product_name: updatedData.product_name ?? previousData.product_name,
+      contact: updatedData.contact ?? previousData.contact,
       statistical_presentation_and_description:
-        updatedData.statistical_presentation_and_description ||
+        updatedData.statistical_presentation_and_description ??
         previousData.statistical_presentation_and_description,
       institutional_mandate:
-        updatedData.institutional_mandate || previousData.institutional_mandate,
-      quality_management: updatedData.quality_management || previousData.quality_management,
+        updatedData.institutional_mandate ?? previousData.institutional_mandate,
+      quality_management: updatedData.quality_management ?? previousData.quality_management,
       accuracy_and_reliability:
-        updatedData.accuracy_and_reliability || previousData.accuracy_and_reliability,
-      timeliness: updatedData.timeliness || previousData.timeliness,
+        updatedData.accuracy_and_reliability ?? previousData.accuracy_and_reliability,
+      timeliness: updatedData.timeliness ?? previousData.timeliness,
       coherence_and_comparability:
-        updatedData.coherence_and_comparability || previousData.coherence_and_comparability,
+        updatedData.coherence_and_comparability ?? previousData.coherence_and_comparability,
       statistical_processing:
-        updatedData.statistical_processing || previousData.statistical_processing,
-      metadata_update: updatedData.metadata_update || previousData.metadata_update,
+        updatedData.statistical_processing ?? previousData.statistical_processing,
+      metadata_update: updatedData.metadata_update ?? previousData.metadata_update,
       released_data_link:
-        updatedData.released_data_link || previousData.released_data_link,
+        updatedData.released_data_link ?? previousData.released_data_link,
       metadata_id: metadataId,
       agency_id: previousData.agency_id, // Keep the same agency_id as previous
       version: newVersion,
       latest_version: true,
+      created_by: updatedData.created_by || previousData.created_by,
     };
 
     // Mark the previous row as not the latest
@@ -622,9 +623,9 @@ async function updateMetadatadb(metadataId, updatedData) {
         statistical_presentation_and_description, institutional_mandate, 
         quality_management, accuracy_and_reliability, timeliness, 
         coherence_and_comparability, statistical_processing, metadata_update, 
-        released_data_link, version, latest_version
+        released_data_link, version, latest_version, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
       ) RETURNING *`;
 
     const insertValues = [
@@ -643,6 +644,7 @@ async function updateMetadatadb(metadataId, updatedData) {
       newData.released_data_link,
       newData.version,
       newData.latest_version,
+      newData.created_by,
     ];
 
     const insertResult = await client.query(insertQuery, insertValues);
@@ -652,7 +654,7 @@ async function updateMetadatadb(metadataId, updatedData) {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error updating metadata:", error);
-    return { success: false, message: "Failed to update metadata" };
+    return { error: true, errorMessage: "Failed to update metadata." };
   } finally {
     client.release();
   }
@@ -664,7 +666,7 @@ async function getAllMetadatadb() {
   accuracy_and_reliability, timeliness, coherence_and_comparability, statistical_processing, metadata_update, released_data_link
  version, latest_version, released_data_link, created_by, created_at, updated_by, updated_at
       FROM metadata
-      ORDER BY created_at DESC; -- Sort by creation time
+      ORDER BY created_at DESC; -- Sort by created_at
     `;
 
     const result = await poolmwp.query(query);
@@ -756,6 +758,21 @@ async function searchMetadataDb(filters) {
   }
 }
 
+const getNextMetadataId = async () => {
+  const client = await poolmwp.connect();
+  try {
+    const result = await client.query(
+      `SELECT COALESCE(MAX(metadata_id), 0) AS max_id FROM metadata`
+    );
+    const maxMetadataId = result.rows[0].max_id;
+    return maxMetadataId + 1; // Increment the max ID by 1
+  } catch (error) {
+    console.error("Error fetching next metadata ID:", error);
+    throw new Error("Failed to calculate next metadata ID.");
+  } finally {
+    client.release();
+  }
+};
 
 
 // async function getMetaDataByProductNamedb(Product) {
@@ -976,7 +993,8 @@ module.exports = {
   allowedReadOperations,
 
   getagencyidbyusernamedb,
-  getAllUserTypesDb
+  getAllUserTypesDb,
+  getNextMetadataId 
 
   // getAllowedRoles,
   // getRoleNameByUsertype

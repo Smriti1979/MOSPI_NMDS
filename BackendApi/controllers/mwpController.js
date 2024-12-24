@@ -30,7 +30,8 @@ const {
   allowedReadOperations,
 
   getagencyidbyusernamedb,
-  getAllUserTypesDb
+  getAllUserTypesDb,
+  getNextMetadataId 
   
 
   // getMetadataByAgencyIddb,
@@ -228,14 +229,14 @@ const createUser = async (req, res) => {
 
     // Check if the logged-in user is allowed to create the requested user type
     if (!allowed || !allowed.includes(usertype)) {
-      return res.status(405).json({
+      return res.status(403).json({
         error: `You don't have access to create a user with usertype: ${usertype}`,
-        statuscode:405
+        statuscode:403
       });
     }
-
+    const created_by = user.username || "System";  // Default to "System" if no username
     // Call the database function to create the user
-    const newUser = await createUserdb(agency_id, username, password, usertype, name, email, phone, address);
+    const newUser = await createUserdb(agency_id, username, password, usertype, name, email, phone, address, created_by);
 
     // Check for errors from createUserdb
     if (newUser.error) {
@@ -302,13 +303,31 @@ const updateUser = async (req, res) => {
 
     const allowed = await allowedUpdateOperations(user.usertype);
 
-    // Check if the logged-in user is allowed to create the requested user type
-    if (!allowed || !allowed.includes(usertype)) {
-      return res.status(405).json({
-        error: `You don't have access to update a user with usertype: ${usertype}`,
-        statuscode:405
+    console.log("Allowed operations:", allowed);
+
+    // Check if the allowed array is not empty and contains valid data
+    if (Array.isArray(allowed) && allowed.length > 0) {
+      // Parse the first element if it's a string and looks like an array
+      const parsedAllowed = JSON.parse(allowed[0]);
+
+      console.log("Parsed allowed operations:", parsedAllowed);
+
+      // Check if `usertype` is included in the parsed array
+      if (parsedAllowed.includes(usertype)) {
+        console.log(`The user is allowed to update the usertype: ${usertype}`);
+      } else {
+        return res.status(405).json({
+          error: `You don't have access to update a user with usertype: ${usertype}`,
+          statuscode: 405,
+        });
+      }
+    } else {
+      return res.status(500).json({
+        error: "Invalid allowed operations data",
+        statuscode: 500,
       });
     }
+
 
     const validationErrors = validateUserInput(req.body);
     if (validationErrors.length > 0) {
@@ -526,19 +545,19 @@ const deleteagency = async (req, res) => {
 };
 
 const createMetadata = async (req, res) => {
+  const client = await poolmwp.connect();
   try {
     const user = req.user;
-    
 
     if (!user || !user.id) {
       return res.status(403).json({
         error: "Agency ID not found. Please log in again.",
-        statuscode:403
+        statuscode: 403,
       });
     }
-     
-  
+
     const agency_id = await getagencyidbyusernamedb(user.username);
+
     // Extract fields from the request body
     const {
       product_name,
@@ -558,12 +577,18 @@ const createMetadata = async (req, res) => {
     if (!product_name || !released_data_link) {
       return res.status(400).json({
         error: "Required fields: product_name and released_data_link.",
-        statuscode:400
+        statuscode: 400,
       });
     }
 
+    await client.query("BEGIN");
+
+    // Get the next metadata ID
+    const newMetadataId = await getNextMetadataId();
+
     // Prepare metadata details
     const metadataDetails = {
+      metadata_id: newMetadataId,
       agency_id,
       product_name,
       contact,
@@ -576,29 +601,63 @@ const createMetadata = async (req, res) => {
       statistical_processing,
       metadata_update,
       released_data_link,
+      version: 1, // Initial version
+      latest_version: true, // Mark as the latest version
       created_by: user.username || "System", // Default to "System" if no username
     };
 
-    // Call database function
-    const result = await createMetadatadb(metadataDetails);
+    // Insert the new metadata record
+    const insertQuery = `
+      INSERT INTO metadata (
+        metadata_id, agency_id, product_name, contact,
+        statistical_presentation_and_description, institutional_mandate,
+        quality_management, accuracy_and_reliability, timeliness,
+        coherence_and_comparability, statistical_processing, metadata_update,
+        released_data_link, version, latest_version, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+      ) RETURNING *`;
 
-    if (result.error) {
-      throw new Error(result.errorMessage);
-    }
+    const insertValues = [
+      metadataDetails.metadata_id,
+      metadataDetails.agency_id,
+      metadataDetails.product_name,
+      metadataDetails.contact,
+      metadataDetails.statistical_presentation_and_description,
+      metadataDetails.institutional_mandate,
+      metadataDetails.quality_management,
+      metadataDetails.accuracy_and_reliability,
+      metadataDetails.timeliness,
+      metadataDetails.coherence_and_comparability,
+      metadataDetails.statistical_processing,
+      metadataDetails.metadata_update,
+      metadataDetails.released_data_link,
+      metadataDetails.version,
+      metadataDetails.latest_version,
+      metadataDetails.created_by,
+    ];
+
+    const insertResult = await client.query(insertQuery, insertValues);
+
+    await client.query("COMMIT");
 
     return res.status(201).json({
-      data: result,
+      data: insertResult.rows[0],
       message: "Metadata created successfully.",
       statusCode: 201,
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Error in createMetadata:", error);
     return res.status(500).json({
       error: `Error in creating metadata: ${error.message}`,
-      statuscode:500
+      statuscode: 500,
     });
+  } finally {
+    client.release();
   }
 };
+
 
 
 const getAllMetadata = async (req, res) => {
@@ -634,20 +693,30 @@ const updateMetadata = async (req, res) => {
 
     // Validate metadata ID
     if (!metadataId) {
-      return res.status(400).json({ error: "Metadata ID is required", statuscode:400 });
+      return res.status(400).json({ error: "Metadata ID is required", statuscode: 400 });
     }
 
     // Call the function to update the database
     const result = await updateMetadatadb(metadataId, updatedData);
 
     if (result.success) {
-      return res.status(200).json({ message: "Metadata updated successfully", data: result.data, statuscode:200 });
+      return res.status(200).json({
+        message: "Metadata updated successfully",
+        data: result.data,
+        statuscode: 200,
+      });
     } else {
-      return res.status(500).json({ error: result.message, statuscode:500 });
+      return res.status(500).json({
+        error: result.errorMessage || "Failed to update metadata.",
+        statuscode: 500,
+      });
     }
   } catch (error) {
     console.error("Error updating metadata:", error);
-    return res.status(500).json({ error: "Internal server error", statuscode:500 });
+    return res.status(500).json({
+      error: "Internal server error",
+      statuscode: 500,
+    });
   }
 };
 
@@ -668,7 +737,6 @@ const searchMetadata = async (req, res) => {
     return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
-
 
 const deleteMetadata = async (req, res) => {
   try {
@@ -702,8 +770,6 @@ const deleteMetadata = async (req, res) => {
     });
   }
 };
-
-
 // const getMetaDataByProductName = async (req, res) => {
 //   const { Product } = req.params;
   

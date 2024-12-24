@@ -2,10 +2,15 @@ module.exports = (sequelize, DataTypes) => {
   const Metadata = sequelize.define(
     "Metadata",
     {
+      id:{
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false,
+      },
       metadata_id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
+        allowNull: false,
       },
       agency_id: {
         type: DataTypes.INTEGER,
