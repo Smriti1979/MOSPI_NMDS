@@ -31,7 +31,8 @@ const {
 
   getagencyidbyusernamedb,
   getAllUserTypesDb,
-  getNextMetadataId 
+  getNextMetadataId,
+  checkAgencyExists 
   
 
   // getMetadataByAgencyIddb,
@@ -223,6 +224,12 @@ const createUser = async (req, res) => {
   }
  
   try {
+
+    const agencyExists = await checkAgencyExists(agency_id);
+    if (!agencyExists) {
+      return res.status(404).json({ error: `Agency with ID ${agency_id} does not exist`, statuscode: 404 });
+    }
+
     // Fetch allowed roles for the logged-in user
     const allowed = await allowedCreateOperations(user.usertype);
     console.log("Allowed operations:", allowed);
@@ -555,8 +562,9 @@ const createMetadata = async (req, res) => {
         statuscode: 403,
       });
     }
-
+ 
     const agency_id = await getagencyidbyusernamedb(user.username);
+
 
     // Extract fields from the request body
     const {

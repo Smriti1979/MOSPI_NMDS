@@ -773,7 +773,18 @@ const getNextMetadataId = async () => {
     client.release();
   }
 };
+async function checkAgencyExists(agency_id) {
+  try {
+    const getQuery = `SELECT 1 FROM agencies WHERE agency_id = $1`;
+    const result = await poolmwp.query(getQuery, [agency_id]);
 
+    // If the result row count is 0, the agency_id doesn't exist
+    return result.rowCount > 0; // Return true if agency_id exists, false otherwise
+  } catch (error) {
+    console.error("Error checking agency existence:", error);
+    return false; // Return false in case of error
+  }
+}
 
 // async function getMetaDataByProductNamedb(Product) {
 //   const getQuery = `SELECT * FROM  metadata where "product_name"=$1  AND  latest=true`;
@@ -994,7 +1005,8 @@ module.exports = {
 
   getagencyidbyusernamedb,
   getAllUserTypesDb,
-  getNextMetadataId 
+  getNextMetadataId,
+  checkAgencyExists 
 
   // getAllowedRoles,
   // getRoleNameByUsertype
