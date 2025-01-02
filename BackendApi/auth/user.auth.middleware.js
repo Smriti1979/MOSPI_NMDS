@@ -23,7 +23,7 @@ const verifyJWT = async (req, res, next) => {
     const usersql = "SELECT * FROM users WHERE user_id=$1";
     const userDetail = await poolauth.query(usersql, [decodedToken._id]);
     const user = userDetail.rows[0];
-
+  
     if (!user) {
       return res.status(400).json({ error: "Invalid mwp Access Token" });
     }

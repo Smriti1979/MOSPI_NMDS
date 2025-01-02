@@ -293,16 +293,15 @@ const getUser = async (req, res) => {
 };
 const updateUser = async (req, res) => {
   let { username } = req.params;
-  let { name, email, phone, address } = req.body;
+  const { name, email, phone, address } = req.body;
   const user = req.user;
 
   try {
-
     const userResult = await getUsertypeFromUsername(username);
     if (!userResult || userResult.error) {
       return res.status(404).json({
         error: `User with username "${username}" not found.`,
-        statuscode:404
+        statuscode: 404,
       });
     }
 
@@ -310,19 +309,10 @@ const updateUser = async (req, res) => {
 
     const allowed = await allowedUpdateOperations(user.usertype);
 
-    console.log("Allowed operations:", allowed);
-
-    // Check if the allowed array is not empty and contains valid data
     if (Array.isArray(allowed) && allowed.length > 0) {
-      // Parse the first element if it's a string and looks like an array
       const parsedAllowed = JSON.parse(allowed[0]);
 
-      console.log("Parsed allowed operations:", parsedAllowed);
-
-      // Check if `usertype` is included in the parsed array
-      if (parsedAllowed.includes(usertype)) {
-        console.log(`The user is allowed to update the usertype: ${usertype}`);
-      } else {
+      if (!parsedAllowed.includes(usertype)) {
         return res.status(405).json({
           error: `You don't have access to update a user with usertype: ${usertype}`,
           statuscode: 405,
@@ -335,28 +325,42 @@ const updateUser = async (req, res) => {
       });
     }
 
+    // Build the fieldsToUpdate object from the request body
+    const fieldsToUpdate = {};
+    if (name !== undefined) fieldsToUpdate.name = name;
+    if (email !== undefined) fieldsToUpdate.email = email;
+    if (phone !== undefined) fieldsToUpdate.phone = phone;
+    if (address !== undefined) fieldsToUpdate.address = address;
 
-    const validationErrors = validateUserInput(req.body);
-    if (validationErrors.length > 0) {
-      return res.status(400).json({ error: `Validation errors: ${validationErrors.join(", ")}`, statuscode:400 });
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      return res.status(400).json({
+        error: "No valid fields provided for update",
+        statuscode: 400,
+      });
     }
 
-    const updatedUser = await updateUserDb(username, name, email, phone, address);
+    // Call the updateUserDb function
+    const updatedUser = await updateUserDb(username, fieldsToUpdate);
 
     if (updatedUser.error) {
-      return res.status(updatedUser.errorCode || 500).json({ error: updatedUser.errorMessage, statuscode:updatedUser.errorCode || 500 });
+      return res
+        .status(updatedUser.errorCode || 500)
+        .json({ error: updatedUser.errorMessage, statuscode: updatedUser.errorCode || 500 });
     }
 
-    // Return the updated user details
     return res.status(200).json({
-      data: updatedUser,  // Send the updated user object
+      data: updatedUser,
       message: "User updated successfully",
       statusCode: 200,
     });
   } catch (error) {
-    return res.status(500).json({ error: `Error updating user: ${error.message || error}`, statuscode:500 });
+    return res.status(500).json({
+      error: `Error updating user: ${error.message || error}`,
+      statuscode: 500,
+    });
   }
 };
+
 
 const deleteUser = async (req, res) => {
   let { username } = req.params;
@@ -440,7 +444,7 @@ const createagency = async (req, res) => {
     if (result?.error) {
       return res
         .status(result.errorCode || 500)
-        .json({ error: result.errorMessage, statuscode:result.errorCode || 500 });
+        .json({ error: `Agency already exists`, statuscode:result.errorCode || 500 });
     }
 
     return res.status(201).send({
@@ -550,7 +554,6 @@ const deleteagency = async (req, res) => {
       .json({ error: `Unable to delete the agency: ${error}`, statuscode:500 });
   }
 };
-
 const createMetadata = async (req, res) => {
   const client = await poolmwp.connect();
   try {
@@ -559,25 +562,47 @@ const createMetadata = async (req, res) => {
     if (!user || !user.id) {
       return res.status(403).json({
         error: "Agency ID not found. Please log in again.",
-        statuscode: 403,
+        statusCode: 403,
       });
     }
- 
-    const agency_id = await getagencyidbyusernamedb(user.username);
 
+    const agency_id = await getagencyidbyusernamedb(user.username);
 
     // Extract fields from the request body
     const {
       product_name,
-      contact,
-      statistical_presentation_and_description,
-      institutional_mandate,
-      quality_management,
-      accuracy_and_reliability,
+      contact_organisation,
+      compiling_agency,
+      contact_details,
+      data_description,
+      classification_system,
+      sector_coverage,
+      statistical_concepts_and_definitions,
+      statistical_unit,
+      statistical_population,
+      reference_period,
+      data_confidentiality,
+      legal_acts_and_other_agreements,
+      data_sharing,
+      release_policy,
+      release_calendar,
+      frequency_of_dissemination,
+      data_access,
+      documentation_on_methodology,
+      quality_documentation,
+      quality_assurance,
+      quality_assessment,
+      sampling_error,
       timeliness,
-      coherence_and_comparability,
-      statistical_processing,
-      metadata_update,
+      comparability_overtime,
+      coherence,
+      source_data_type,
+      frequency_of_data_collection,
+      data_collection_method,
+      data_validation,
+      data_compilation,
+      metadata_last_posted,
+      metadata_last_update,
       released_data_link,
     } = req.body;
 
@@ -585,7 +610,7 @@ const createMetadata = async (req, res) => {
     if (!product_name || !released_data_link) {
       return res.status(400).json({
         error: "Required fields: product_name and released_data_link.",
-        statuscode: 400,
+        statusCode: 400,
       });
     }
 
@@ -599,16 +624,38 @@ const createMetadata = async (req, res) => {
       metadata_id: newMetadataId,
       agency_id,
       product_name,
-      contact,
-      statistical_presentation_and_description,
-      institutional_mandate,
-      quality_management,
-      accuracy_and_reliability,
+      contact_organisation,
+      compiling_agency,
+      contact_details,
+      data_description,
+      classification_system,
+      sector_coverage,
+      statistical_concepts_and_definitions,
+      statistical_unit,
+      statistical_population,
+      reference_period,
+      data_confidentiality,
+      legal_acts_and_other_agreements,
+      data_sharing,
+      release_policy,
+      release_calendar,
+      frequency_of_dissemination,
+      data_access,
+      documentation_on_methodology,
+      quality_documentation,
+      quality_assurance,
+      quality_assessment,
+      sampling_error,
       timeliness,
-      coherence_and_comparability,
-      statistical_processing,
-      metadata_update,
-      released_data_link,
+      comparability_overtime,
+      coherence,
+      source_data_type,
+      frequency_of_data_collection,
+      data_collection_method,
+      data_validation,
+      data_compilation,
+      metadata_last_posted,
+      metadata_last_update,
       version: 1, // Initial version
       latest_version: true, // Mark as the latest version
       created_by: user.username || "System", // Default to "System" if no username
@@ -617,32 +664,63 @@ const createMetadata = async (req, res) => {
     // Insert the new metadata record
     const insertQuery = `
       INSERT INTO metadata (
-        metadata_id, agency_id, product_name, contact,
-        statistical_presentation_and_description, institutional_mandate,
-        quality_management, accuracy_and_reliability, timeliness,
-        coherence_and_comparability, statistical_processing, metadata_update,
-        released_data_link, version, latest_version, created_by
+        metadata_id, agency_id, product_name, contact_organisation, compiling_agency,
+        contact_details, data_description, classification_system, sector_coverage,
+        statistical_concepts_and_definitions, statistical_unit, statistical_population,
+        reference_period, data_confidentiality, legal_acts_and_other_agreements,
+        data_sharing, release_policy, release_calendar, frequency_of_dissemination,
+        data_access, documentation_on_methodology, quality_documentation,
+        quality_assurance, quality_assessment, sampling_error, timeliness,
+        comparability_overtime, coherence, source_data_type, frequency_of_data_collection,
+        data_collection_method, data_validation, data_compilation, metadata_last_posted,
+        metadata_last_update, version, latest_version, released_data_link, created_by, created_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+        $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+        $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
       ) RETURNING *`;
 
     const insertValues = [
       metadataDetails.metadata_id,
       metadataDetails.agency_id,
       metadataDetails.product_name,
-      metadataDetails.contact,
-      metadataDetails.statistical_presentation_and_description,
-      metadataDetails.institutional_mandate,
-      metadataDetails.quality_management,
-      metadataDetails.accuracy_and_reliability,
+      metadataDetails.contact_organisation,
+      metadataDetails.compiling_agency,
+      metadataDetails.contact_details,
+      metadataDetails.data_description,
+      metadataDetails.classification_system,
+      metadataDetails.sector_coverage,
+      metadataDetails.statistical_concepts_and_definitions,
+      metadataDetails.statistical_unit,
+      metadataDetails.statistical_population,
+      metadataDetails.reference_period,
+      metadataDetails.data_confidentiality,
+      metadataDetails.legal_acts_and_other_agreements,
+      metadataDetails.data_sharing,
+      metadataDetails.release_policy,
+      metadataDetails.release_calendar,
+      metadataDetails.frequency_of_dissemination,
+      metadataDetails.data_access,
+      metadataDetails.documentation_on_methodology,
+      metadataDetails.quality_documentation,
+      metadataDetails.quality_assurance,
+      metadataDetails.quality_assessment,
+      metadataDetails.sampling_error,
       metadataDetails.timeliness,
-      metadataDetails.coherence_and_comparability,
-      metadataDetails.statistical_processing,
-      metadataDetails.metadata_update,
-      metadataDetails.released_data_link,
+      metadataDetails.comparability_overtime,
+      metadataDetails.coherence,
+      metadataDetails.source_data_type,
+      metadataDetails.frequency_of_data_collection,
+      metadataDetails.data_collection_method,
+      metadataDetails.data_validation,
+      metadataDetails.data_compilation,
+      metadataDetails.metadata_last_posted,
+      metadataDetails.metadata_last_update,
       metadataDetails.version,
       metadataDetails.latest_version,
+      metadataDetails.released_data_link,
       metadataDetails.created_by,
+      new Date(), // created_at
     ];
 
     const insertResult = await client.query(insertQuery, insertValues);
@@ -659,14 +737,12 @@ const createMetadata = async (req, res) => {
     console.error("Error in createMetadata:", error);
     return res.status(500).json({
       error: `Error in creating metadata: ${error.message}`,
-      statuscode: 500,
+      statusCode: 500,
     });
   } finally {
     client.release();
   }
 };
-
-
 
 const getAllMetadata = async (req, res) => {
   try {

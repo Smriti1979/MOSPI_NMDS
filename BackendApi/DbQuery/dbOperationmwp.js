@@ -93,8 +93,6 @@ const allowedUpdateOperations = async (usertype) => {
     throw new Error("Failed to fetch allowed update operations");
   }
 };
-
-
 const allowedReadOperations = async (usertype) => {
   try {
     const result = await poolmwp.query(
@@ -129,8 +127,6 @@ const allowedDeleteOperations = async (usertype) => {
     throw new Error("Failed to fetch allowed delete operations");
   }
 };
-
-
 
 async function EmailValidation(username) {
   const query = "SELECT * FROM users WHERE username = $1";
@@ -174,8 +170,6 @@ async function getagencyidbyusernamedb(username) {
   }
 }
 
-
-
 async function createUserdb(agency_id, username, password, usertype, name, email, phone, address, created_by) {
   if (!agency_id || !username || !password || !usertype || !name || !email || !phone || !address) {
       return { error: true, errorMessage: "All fields are required" };
@@ -208,7 +202,7 @@ async function createUserdb(agency_id, username, password, usertype, name, email
       const duplicateField = error.detail.match(/\((.*?)\)/)?.[1];
       return {
         error: true,
-        errorMessage: `Duplicate value for ${duplicateField}. Please provide a unique value.`,
+        errorMessage: `${duplicateField} already exists, please provide a unique ${duplicateField}.`,
       };
     }
 
@@ -261,29 +255,48 @@ async function getUserdb(allowedUsertypes) {
     };
   }
 }
-async function updateUserDb(username, name, email, phone, address) {
-  const query = `
-    UPDATE users SET 
-      username = $1, 
-      name = $2, 
-      email = $3,
-      phone = $4,
-      address = $5
-    WHERE username = $6
-    RETURNING *`;
-
-  const user = await poolmwp.query(query, [
-    username, name, email, phone, address, username  // Added username to the query parameters
-  ]);
-
-  if (user.rows.length === 0) {
+async function updateUserDb(username, fieldsToUpdate) {
+  // Ensure there are fields to update
+  if (Object.keys(fieldsToUpdate).length === 0) {
     return {
       error: true,
-      errorCode: 404,
-      errorMessage: `User not found`,
+      errorCode: 400,
+      errorMessage: "No fields provided to update",
     };
   }
-  return user.rows[0]; // Return the updated user data
+
+  // Dynamically construct query
+  const setClause = Object.keys(fieldsToUpdate)
+    .map((key, index) => `${key} = $${index + 1}`)
+    .join(", ");
+
+  const values = [...Object.values(fieldsToUpdate), username];
+  const query = `
+    UPDATE users
+    SET ${setClause}
+    WHERE username = $${values.length}
+    RETURNING *;
+  `;
+
+  try {
+    const user = await poolmwp.query(query, values);
+
+    if (user.rows.length === 0) {
+      return {
+        error: true,
+        errorCode: 404,
+        errorMessage: `User not found`,
+      };
+    }
+
+    return user.rows[0]; // Return the updated user data
+  } catch (error) {
+    return {
+      error: true,
+      errorCode: 500,
+      errorMessage: `Database error: ${error.message}`,
+    };
+  }
 }
 
 async function deleteUserDb(username) {
@@ -311,7 +324,6 @@ async function deleteUserDb(username) {
     };
   }
 }
-
 
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;
@@ -345,7 +357,6 @@ async function getAllUserTypesDb() {
   }
 }
 
-
 async function createagencydb(agency_name, created_by) {
   try {
     const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1, $2) RETURNING *`;
@@ -370,7 +381,6 @@ async function createagencydb(agency_name, created_by) {
     };
   }
 }
-
 
 async function getagencydb() {
   try {
@@ -463,15 +473,39 @@ async function deleteagencydb(agency_name) {
 async function createMetadatadb({
   agency_id,
   product_name,
-  contact,
-  statistical_presentation_and_description,
-  institutional_mandate,
-  quality_management,
-  accuracy_and_reliability,
+  contact_organisation,
+  compiling_agency,
+  contact_details,
+  data_description,
+  classification_system,
+  sector_coverage,
+  statistical_concepts_and_definitions,
+  statistical_unit,
+  statistical_population,
+  reference_period,
+  data_confidentiality,
+  legal_acts_and_other_agreements,
+  data_sharing,
+  release_policy,
+  release_calendar,
+  frequency_of_dissemination,
+  data_access,
+  documentation_on_methodology,
+  quality_documentation,
+  quality_assurance,
+  quality_assessment,
+  sampling_error,
   timeliness,
-  coherence_and_comparability,
-  statistical_processing,
-  metadata_update,
+  comparability_overtime,
+  coherence,
+  source_data_type,
+  frequency_of_data_collection,
+  data_collection_method,
+  data_validation,
+  data_compilation,
+  metadata_last_posted,
+  metadata_last_update,
+  version,
   released_data_link,
   created_by,
 }) {
@@ -495,7 +529,6 @@ async function createMetadatadb({
     const maxMetadataResult = await poolmwp.query(maxMetadataQuery);
     const maxMetadataId = maxMetadataResult.rows[0]?.max_metadata_id || 0;
     const metadataId = maxMetadataId + 1;
-    const version = 1; // Starting version for new metadata
 
     // Step 3: Insert the new metadata record
     const insertQuery = `
@@ -503,43 +536,90 @@ async function createMetadatadb({
         metadata_id,
         agency_id,
         product_name,
-        contact,
-        statistical_presentation_and_description,
-        institutional_mandate,
-        quality_management,
-        accuracy_and_reliability,
+        contact_organisation,
+        compiling_agency,
+        contact_details,
+        data_description,
+        classification_system,
+        sector_coverage,
+        statistical_concepts_and_definitions,
+        statistical_unit,
+        statistical_population,
+        reference_period,
+        data_confidentiality,
+        legal_acts_and_other_agreements,
+        data_sharing,
+        release_policy,
+        release_calendar,
+        frequency_of_dissemination,
+        data_access,
+        documentation_on_methodology,
+        quality_documentation,
+        quality_assurance,
+        quality_assessment,
+        sampling_error,
         timeliness,
-        coherence_and_comparability,
-        statistical_processing,
-        metadata_update,
+        comparability_overtime,
+        coherence,
+        source_data_type,
+        frequency_of_data_collection,
+        data_collection_method,
+        data_validation,
+        data_compilation,
+        metadata_last_posted,
+        metadata_last_update,
+        version,
+        latest_version,
         released_data_link,
         created_by,
-        created_at,
-        latest_version,
-        version
+        created_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
       )
       RETURNING *;
     `;
+
     const result = await poolmwp.query(insertQuery, [
       metadataId,
       agency_id,
       product_name,
-      contact,
-      statistical_presentation_and_description,
-      institutional_mandate,
-      quality_management,
-      accuracy_and_reliability,
+      contact_organisation,
+      compiling_agency,
+      contact_details,
+      data_description,
+      classification_system,
+      sector_coverage,
+      statistical_concepts_and_definitions,
+      statistical_unit,
+      statistical_population,
+      reference_period,
+      data_confidentiality,
+      legal_acts_and_other_agreements,
+      data_sharing,
+      release_policy,
+      release_calendar,
+      frequency_of_dissemination,
+      data_access,
+      documentation_on_methodology,
+      quality_documentation,
+      quality_assurance,
+      quality_assessment,
+      sampling_error,
       timeliness,
-      coherence_and_comparability,
-      statistical_processing,
-      metadata_update,
+      comparability_overtime,
+      coherence,
+      source_data_type,
+      frequency_of_data_collection,
+      data_collection_method,
+      data_validation,
+      data_compilation,
+      metadata_last_posted,
+      metadata_last_update,
+      version,
+      true, // latest_version
       released_data_link,
       created_by,
       new Date(), // created_at
-      true, // latest_version
-      version,
     ]);
 
     // Handle case where no rows are inserted
@@ -662,9 +742,18 @@ async function updateMetadatadb(metadataId, updatedData) {
 async function getAllMetadatadb() {
   try {
     const query = `
-      SELECT metadata_id, agency_id, product_name, contact, statistical_presentation_and_description, institutional_mandate, quality_management,
-  accuracy_and_reliability, timeliness, coherence_and_comparability, statistical_processing, metadata_update, released_data_link
- version, latest_version, released_data_link, created_by, created_at, updated_by, updated_at
+      SELECT 
+        id, metadata_id, agency_id, product_name, contact_organisation, compiling_agency,
+        contact_details, data_description, classification_system, sector_coverage,
+        statistical_concepts_and_definitions, statistical_unit, statistical_population,
+        reference_period, data_confidentiality, Legal_acts_and_other_agreements,
+        data_sharing, release_policy, release_calendar, frequency_of_dissemination,
+        data_access, documentation_on_methodology, quality_documentation,
+        quality_assurance, quality_assessment, sampling_error, timeliness,
+        Comparability_overtime, coherence, source_data_type, frequency_of_data_collection,
+        data_collection_method, data_validation, data_compilation, metadata_last_posted,
+        metadata_last_update, version, latest_version, released_data_link,
+        created_by, created_at, updated_by, updated_at
       FROM metadata
       ORDER BY created_at DESC; -- Sort by created_at
     `;
@@ -684,6 +773,7 @@ async function getAllMetadatadb() {
     };
   }
 }
+
 async function deleteMetadatadb(id) {
   try {
     const deleteQuery = `
