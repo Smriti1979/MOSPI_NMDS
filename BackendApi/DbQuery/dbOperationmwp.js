@@ -640,7 +640,7 @@ async function createMetadatadb({
   }
 }
 
-async function updateMetadatadb(metadataId, updatedData) {
+async function updateMetadatadb(id, updatedData) {
   const client = await poolmwp.connect();
   try {
     await client.query("BEGIN");
@@ -648,7 +648,7 @@ async function updateMetadatadb(metadataId, updatedData) {
     // Fetch the most recent row for the given metadata ID
     const { rows } = await client.query(
       `SELECT * FROM metadata 
-       WHERE metadata_id = $1 AND latest_version = true 
+       WHERE id = $1 AND latest_version = true 
        ORDER BY version DESC 
        LIMIT 1`,
       [metadataId]
