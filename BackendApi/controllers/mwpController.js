@@ -772,37 +772,49 @@ const getAllMetadata = async (req, res) => {
 
 const updateMetadata = async (req, res) => {
   try {
-    const metadataId = req.params.id;
+    const id = req.params.id;
     const updatedData = req.body;
 
     // Validate metadata ID
-    if (!metadataId) {
-      return res.status(400).json({ error: "Metadata ID is required", statuscode: 400 });
+    if (!id) {
+      return res.status(400).json({
+        error: "ID is required.",
+        statuscode: 400,
+      });
+    }
+
+    // Validate if updatedData contains any fields
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({
+        error: "No updates provided.",
+        statuscode: 400,
+      });
     }
 
     // Call the function to update the database
-    const result = await updateMetadatadb(metadataId, updatedData);
+    const result = await updateMetadatadb(id, updatedData);
 
     if (result.success) {
       return res.status(200).json({
-        message: "Metadata updated successfully",
+        message: "Metadata updated successfully.",
         data: result.data,
         statuscode: 200,
       });
     } else {
-      return res.status(500).json({
+      return res.status(400).json({
         error: result.errorMessage || "Failed to update metadata.",
-        statuscode: 500,
+        statuscode: 400,
       });
     }
   } catch (error) {
     console.error("Error updating metadata:", error);
     return res.status(500).json({
-      error: "Internal server error",
+      error: "Internal server error.",
       statuscode: 500,
     });
   }
 };
+
 
 const searchMetadata = async (req, res) => {
   try {

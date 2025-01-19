@@ -641,7 +641,7 @@ async function createMetadatadb({
 }
 
 async function updateMetadatadb(metadataId, updatedData) {
-  const client = await poolmwp.connect(); // Ensure you're using the proper database connection
+  const client = await poolmwp.connect();
   try {
     await client.query("BEGIN");
 
@@ -659,6 +659,18 @@ async function updateMetadatadb(metadataId, updatedData) {
     }
 
     const previousData = rows[0];
+
+    // Check if updatedData contains any fields to update
+    const hasUpdates = Object.keys(updatedData).some(
+      (key) =>
+        updatedData[key] !== undefined &&
+        updatedData[key] !== previousData[key]
+    );
+
+    if (!hasUpdates) {
+      return { error: true, errorMessage: "No updates provided or no changes detected." };
+    }
+
     const newVersion = previousData.version + 1;
 
     // Merge provided fields with the previous data
@@ -682,7 +694,7 @@ async function updateMetadatadb(metadataId, updatedData) {
       released_data_link:
         updatedData.released_data_link ?? previousData.released_data_link,
       metadata_id: metadataId,
-      agency_id: previousData.agency_id, // Keep the same agency_id as previous
+      agency_id: previousData.agency_id,
       version: newVersion,
       latest_version: true,
       created_by: updatedData.created_by || previousData.created_by,
@@ -739,6 +751,7 @@ async function updateMetadatadb(metadataId, updatedData) {
     client.release();
   }
 }
+
 async function getAllMetadatadb() {
   try {
     const query = `
