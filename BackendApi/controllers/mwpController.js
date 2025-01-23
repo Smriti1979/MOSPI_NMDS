@@ -656,6 +656,7 @@ const createMetadata = async (req, res) => {
       data_compilation,
       metadata_last_posted,
       metadata_last_update,
+      released_data_link,
       version: 1, // Initial version
       latest_version: true, // Mark as the latest version
       created_by: user.username || "System", // Default to "System" if no username
