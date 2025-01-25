@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
-      agency_status: {
+      is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },

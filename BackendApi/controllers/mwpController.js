@@ -34,7 +34,6 @@ const {
   getNextMetadataId,
   checkAgencyExists 
   
-
   // getMetadataByAgencyIddb,
   // getMetaDataByProductNamedb,
   // getMetaDataByVersionP,
@@ -261,7 +260,6 @@ const createUser = async (req, res) => {
     return res.status(500).json({ error: `Error creating user: ${error.message}`, statuscode:500 });
   }
 };
-
 const getUser = async (req, res) => {
   try {
     const { usertype } = req.user; 
@@ -360,8 +358,6 @@ const updateUser = async (req, res) => {
     });
   }
 };
-
-
 const deleteUser = async (req, res) => {
   let { username } = req.params;
   const user = req.user;
@@ -401,7 +397,6 @@ const deleteUser = async (req, res) => {
     return res.status(500).json({ error: `Error deleting user: ${error.message}`, statuscode:500 });
   }
 };
-
 const getallusertypes = async (req, res) => {
   try {
     // Call the database query function to get all user types
@@ -459,7 +454,6 @@ const createagency = async (req, res) => {
       .json({ error: `Error in Creating agency: ${error.message}`, statuscode:500 });
   }
 };
-
 const getagency = async (req, res) => {
   try {
     const user = req.user;
@@ -486,7 +480,6 @@ const getagency = async (req, res) => {
     return res.status(500).json({ error: `Unable to get agency ${error}`, statuscode:500 });
   }
 };
-
 const updateagency = async (req, res) => {
   const { agency_name } = req.params; // Current agency name from the path
   const { agency_name: new_agency_name } = req.body; // New agency name from the request body
@@ -525,7 +518,6 @@ const updateagency = async (req, res) => {
       .json({ error: `Error in updating agency data: ${error}`, statuscode:500 });
   }
 };
-
 const deleteagency = async (req, res) => {
   const { agency_name } = req.params;
   const user = req.user;
@@ -615,6 +607,18 @@ const createMetadata = async (req, res) => {
     }
 
     await client.query("BEGIN");
+
+    // Check for duplicate product_name
+    const duplicateCheckQuery = `SELECT * FROM metadata WHERE product_name = $1`;
+    const duplicateCheckResult = await client.query(duplicateCheckQuery, [product_name]);
+
+    if (duplicateCheckResult.rows.length > 0) {
+      // If a record with the same product_name exists, return an error
+      return res.status(400).json({
+        error: "Product already exists.",
+        statusCode: 400,
+      });
+    }
 
     // Get the next metadata ID
     const newMetadataId = await getNextMetadataId();
@@ -744,7 +748,6 @@ const createMetadata = async (req, res) => {
     client.release();
   }
 };
-
 const getAllMetadata = async (req, res) => {
   try {
     const result = await getAllMetadatadb();
@@ -770,7 +773,6 @@ const getAllMetadata = async (req, res) => {
     });
   }
 };
-
 const updateMetadata = async (req, res) => {
   try {
     const id = req.params.id;
@@ -815,8 +817,6 @@ const updateMetadata = async (req, res) => {
     });
   }
 };
-
-
 const searchMetadata = async (req, res) => {
   try {
     const { product_name, version, agency_id } = req.query;
@@ -834,7 +834,6 @@ const searchMetadata = async (req, res) => {
     return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
-
 const deleteMetadata = async (req, res) => {
   try {
     const { id } = req.params;

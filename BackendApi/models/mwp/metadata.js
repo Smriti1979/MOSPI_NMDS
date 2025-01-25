@@ -280,6 +280,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
       created_by: {
         type: DataTypes.TEXT,
         allowNull: true,

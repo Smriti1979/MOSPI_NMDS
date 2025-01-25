@@ -75,7 +75,6 @@ const allowedCreateOperations = async (usertype) => {
     throw new Error("Failed to fetch allowed create operations");
   }
 };
-
 const allowedUpdateOperations = async (usertype) => {
   try {
     // Execute the query with a parameterized usertype
@@ -109,7 +108,6 @@ const allowedReadOperations = async (usertype) => {
     throw new Error("Failed to fetch allowed read operations");
   }
 };
-
 const allowedDeleteOperations = async (usertype) => {
   try {
     // Execute the query with a parameterized usertype
@@ -127,13 +125,11 @@ const allowedDeleteOperations = async (usertype) => {
     throw new Error("Failed to fetch allowed delete operations");
   }
 };
-
 async function EmailValidation(username) {
   const query = "SELECT * FROM users WHERE username = $1";
   const result = await poolmwp.query(query, [username]);
   return result.rows[0];
 }
-
 async function updatePassword(userId, hashedPassword) {
   const query = `
     UPDATE users
@@ -145,7 +141,6 @@ async function updatePassword(userId, hashedPassword) {
   const result = await poolmwp.query(query, [hashedPassword, userId]);
   return result.rows[0]; // Returns updated user details or undefined if no match
 }
-
 async function getagencyidbyusernamedb(username) {
   try {
     // Validate the input
@@ -169,7 +164,6 @@ async function getagencyidbyusernamedb(username) {
     throw new Error(`Error fetching agency ID for username: ${username}. ${error.message}`);
   }
 }
-
 async function createUserdb(agency_id, username, password, usertype, name, email, phone, address, created_by) {
   if (!agency_id || !username || !password || !usertype || !name || !email || !phone || !address) {
       return { error: true, errorMessage: "All fields are required" };
@@ -211,7 +205,6 @@ async function createUserdb(agency_id, username, password, usertype, name, email
       client.release();
   }
 }
-
 async function getUserdb(allowedUsertypes) {
   try {
     const query = `
@@ -298,9 +291,8 @@ async function updateUserDb(username, fieldsToUpdate) {
     };
   }
 }
-
 async function deleteUserDb(username) {
-  const query = `DELETE FROM users WHERE username = $1`; 
+  const query = `UPDATE users SET is_active = false WHERE username = $1`; 
   try {
     const user = await poolmwp.query(query, [username]);
 
@@ -324,7 +316,6 @@ async function deleteUserDb(username) {
     };
   }
 }
-
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;
   try {
@@ -337,7 +328,6 @@ async function getUsertypeFromUsername(username) {
     return { error: true, errorMessage: error.message };
   }
 }
-
 async function getAllUserTypesDb() {
   const client = await poolmwp.connect(); // Ensure you're using the proper database connection
   try {
@@ -356,7 +346,6 @@ async function getAllUserTypesDb() {
     client.release();
   }
 }
-
 async function createagencydb(agency_name, created_by) {
   try {
     const sqlQuery = `INSERT INTO agencies (agency_name, created_by) VALUES($1, $2) RETURNING *`;
@@ -381,7 +370,6 @@ async function createagencydb(agency_name, created_by) {
     };
   }
 }
-
 async function getagencydb() {
   try {
     const getQuery = `SELECT * FROM agencies `;
@@ -426,7 +414,7 @@ async function deleteagencydb(agency_name) {
     await poolmwp.query("BEGIN");
 
     // Fetch the agency_id for the given agency_name
-    const getAgencyIdQuery = `SELECT agency_id FROM agencies WHERE agency_name = $1`;
+    const getAgencyIdQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
     const agencyResult = await poolmwp.query(getAgencyIdQuery, [agency_name]);
 
     if (agencyResult.rows.length === 0) {
@@ -639,7 +627,6 @@ async function createMetadatadb({
     };
   }
 }
-
 async function updateMetadatadb(id, updatedData) {
   const client = await poolmwp.connect();
   try {
@@ -751,7 +738,6 @@ async function updateMetadatadb(id, updatedData) {
     client.release();
   }
 }
-
 async function getAllMetadatadb() {
   try {
     const query = `
@@ -786,11 +772,11 @@ async function getAllMetadatadb() {
     };
   }
 }
-
 async function deleteMetadatadb(id) {
   try {
     const deleteQuery = `
-      DELETE FROM metadata
+      UPDATE metadata
+      SET is_active = false
       WHERE metadata_id = $1;
     `;
 
@@ -815,7 +801,6 @@ async function deleteMetadatadb(id) {
     };
   }
 }
-
 async function searchMetadataDb(filters) {
   const { product_name, version, agency_id } = filters;
   const client = await poolmwp.connect(); // Ensure you're using the proper database connection
@@ -860,7 +845,6 @@ async function searchMetadataDb(filters) {
     client.release();
   }
 }
-
 const getNextMetadataId = async () => {
   const client = await poolmwp.connect();
   try {
@@ -972,9 +956,6 @@ async function checkAgencyExists(agency_id) {
 //   return data.rows;
 // }
 
-
-
-
 // async function updateMetadatadb(
 //   Product,
 //   metadata,
@@ -1028,7 +1009,6 @@ async function checkAgencyExists(agency_id) {
 //   }
 // }
 
-
 // async function deleteMetadatadb(product) {
 //   try {
 //     // Ensure the SQL query matches the actual column storing the product name
@@ -1075,8 +1055,6 @@ async function checkAgencyExists(agency_id) {
 //     throw error;
 //   }
 // }
-
-
 
 
 module.exports = {
