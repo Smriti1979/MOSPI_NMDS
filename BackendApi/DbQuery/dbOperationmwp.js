@@ -292,23 +292,34 @@ async function updateUserDb(username, fieldsToUpdate) {
   }
 }
 async function deleteUserDb(username) {
-  const query = `UPDATE users SET is_active = false WHERE username = $1`; 
-  try {
-    const user = await poolmwp.query(query, [username]);
+  const query = `
+    UPDATE users 
+    SET is_active = false 
+    WHERE username = $1 
+    RETURNING *; -- Optional: Return updated user information
+  `;
 
-    if (user.rowCount === 0) {
+  try {
+    const result = await poolmwp.query(query, [username]);
+
+    if (result.rowCount === 0) {
+      // No user found with the given username
       return {
         error: true,
         errorCode: 404,
-        errorMessage: `User not found`,
+        errorMessage: `User with username "${username}" not found.`,
       };
     }
 
     return {
-      error: false,
-      data: user.rows[0], // Return the deleted user information
+      success: true,
+      message: `User "${username}" has been deactivated successfully.`,
+      data: result.rows[0], // Includes the updated user data, if RETURNING is used
     };
   } catch (err) {
+    // Handle unexpected errors
+    console.error("Error in deactivateUserDb:", err);
+
     return {
       error: true,
       errorCode: 500,
@@ -316,6 +327,7 @@ async function deleteUserDb(username) {
     };
   }
 }
+
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;
   try {
@@ -414,8 +426,8 @@ async function deleteagencydb(agency_name) {
     await poolmwp.query("BEGIN");
 
     // Fetch the agency_id for the given agency_name
-    const getAgencyIdQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
-    const agencyResult = await poolmwp.query(getAgencyIdQuery, [agency_name]);
+    const fetchAgencyQuery = `SELECT agency_id FROM agencies WHERE agency_name = $1`;
+    const agencyResult = await poolmwp.query(fetchAgencyQuery, [agency_name]);
 
     if (agencyResult.rows.length === 0) {
       // Rollback if the agency does not exist
@@ -429,6 +441,10 @@ async function deleteagencydb(agency_name) {
 
     const agencyId = agencyResult.rows[0].agency_id;
 
+    // Mark the agency as inactive
+    const deactivateAgencyQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
+    await poolmwp.query(deactivateAgencyQuery, [agency_name]);
+
     // Delete associated metadata
     const deleteMetadataQuery = `DELETE FROM metadata WHERE agency_id = $1`;
     await poolmwp.query(deleteMetadataQuery, [agencyId]);
@@ -437,7 +453,7 @@ async function deleteagencydb(agency_name) {
     const deleteUsersQuery = `DELETE FROM users WHERE agency_id = $1`;
     await poolmwp.query(deleteUsersQuery, [agencyId]);
 
-    // Delete the agency
+    // Finally, delete the agency
     const deleteAgencyQuery = `DELETE FROM agencies WHERE agency_name = $1`;
     await poolmwp.query(deleteAgencyQuery, [agency_name]);
 
@@ -458,6 +474,7 @@ async function deleteagencydb(agency_name) {
     };
   }
 }
+
 async function createMetadatadb({
   agency_id,
   product_name,
@@ -774,30 +791,36 @@ async function getAllMetadatadb() {
 }
 async function deleteMetadatadb(id) {
   try {
-    const deleteQuery = `
+    // Update query to mark metadata as inactive
+    const deactivateQuery = `
       UPDATE metadata
       SET is_active = false
       WHERE metadata_id = $1;
     `;
 
-    const result = await poolmwp.query(deleteQuery, [id]);
+    const result = await poolmwp.query(deactivateQuery, [id]);
 
+    // Check if any rows were affected
     if (result.rowCount === 0) {
       return {
         error: true,
+        errorCode: 404,
         errorMessage: "No metadata found with the given ID.",
       };
     }
 
     return {
-      error: false,
-      message: "Metadata deleted successfully.",
+      success: true,
+      message: "Metadata marked as inactive successfully.",
     };
   } catch (error) {
+    // Log the error and return a structured response
     console.error("Error in deleteMetadatadb:", error);
+
     return {
       error: true,
-      errorMessage: `Error in deleteMetadatadb: ${error.message}`,
+      errorCode: 500,
+      errorMessage: `An unexpected error occurred: ${error.message}`,
     };
   }
 }
