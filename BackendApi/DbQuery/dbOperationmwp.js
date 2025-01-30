@@ -148,8 +148,8 @@ async function getagencyidbyusernamedb(username) {
       throw new Error("Username is required to fetch agency data.");
     }
 
-    // Query to fetch agency_id from the users table
-    const query = `SELECT agency_id FROM users WHERE username = $1`;
+    // Query to fetch agency_id for active users only
+    const query = `SELECT agency_id FROM users WHERE username = $1 AND is_active = true`;
     const result = await poolmwp.query(query, [username]);
 
     // Handle case where no rows are returned
@@ -225,7 +225,8 @@ async function getUserdb(allowedUsertypes) {
       ON 
         users.agency_id = agencies.agency_id
       WHERE 
-        users.usertype = ANY($1); -- Filter by allowed user types
+        users.is_active = true  -- Only fetch active users
+        AND users.usertype = ANY($1); -- Filter by allowed user types
     `;
 
     const users = await poolmwp.query(query, [allowedUsertypes]);
@@ -234,7 +235,7 @@ async function getUserdb(allowedUsertypes) {
       return {
         error: true,
         errorCode: 405,
-        errorMessage: "No users found for the allowed user types",
+        errorMessage: "No active users found for the allowed user types",
       };
     }
 
@@ -327,17 +328,20 @@ async function deleteUserDb(username) {
     };
   }
 }
-
 async function getUsertypeFromUsername(username) {
-  const query = `SELECT usertype FROM users WHERE username = $1`;
+  const query = `SELECT usertype FROM users WHERE username = $1 AND is_active = TRUE`;
+  
   try {
     const result = await poolmwp.query(query, [username]);
+
     if (result.rows.length === 0) {
-      return { error: true, errorMessage: "User not found." };
+      return { error: true, errorMessage: "Active user not found." };
     }
-    return result.rows[0]; // This will return { usertype: "some_usertype" }
+
+    return result.rows[0]; // Returns { usertype: "some_usertype" }
   } catch (error) {
-    return { error: true, errorMessage: error.message };
+    console.error("Error fetching usertype:", error.message);
+    return { error: true, errorMessage: "Internal server error." };
   }
 }
 async function getAllUserTypesDb() {
@@ -384,21 +388,24 @@ async function createagencydb(agency_name, created_by) {
 }
 async function getagencydb() {
   try {
-    const getQuery = `SELECT * FROM agencies `;
+    const getQuery = `SELECT * FROM agencies WHERE is_active = true`; // Fetch only active agencies
     const data = await poolmwp.query(getQuery);
-    if (data.rows.length == 0) {
+
+    if (data.rows.length === 0) {
       return {
         error: true,
         errorCode: 402,
-        errorMessage: `Unable to fetch data from agency Table`,
+        errorMessage: `No active agencies found.`,
       };
     }
+
     return data.rows;
   } catch (error) {
+    console.error("Error fetching agencies:", error);
     return {
       error: true,
-      errorCode: 402,
-      errorMessage: `Unable to fetch data from agency=${error}`,
+      errorCode: 500,
+      errorMessage: `Internal server error: ${error.message}`,
     };
   }
 }
@@ -446,15 +453,15 @@ async function deleteagencydb(agency_name) {
     await poolmwp.query(deactivateAgencyQuery, [agency_name]);
 
     // Delete associated metadata
-    const deleteMetadataQuery = `DELETE FROM metadata WHERE agency_id = $1`;
+    const deleteMetadataQuery = `UPDATE metadata SET is_active = false WHERE agency_id = $1`;
     await poolmwp.query(deleteMetadataQuery, [agencyId]);
 
     // Delete associated users
-    const deleteUsersQuery = `DELETE FROM users WHERE agency_id = $1`;
+    const deleteUsersQuery = `UPDATE users SET is_active = false WHERE agency_id = $1`;
     await poolmwp.query(deleteUsersQuery, [agencyId]);
 
     // Finally, delete the agency
-    const deleteAgencyQuery = `DELETE FROM agencies WHERE agency_name = $1`;
+    const deleteAgencyQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
     await poolmwp.query(deleteAgencyQuery, [agency_name]);
 
     // Commit the transaction
@@ -474,7 +481,6 @@ async function deleteagencydb(agency_name) {
     };
   }
 }
-
 async function createMetadatadb({
   agency_id,
   product_name,
@@ -771,6 +777,7 @@ async function getAllMetadatadb() {
         metadata_last_update, version, latest_version, released_data_link,
         created_by, created_at, updated_by, updated_at
       FROM metadata
+      WHERE is_active = true -- Only fetch active metadata entries
       ORDER BY created_at DESC; -- Sort by created_at
     `;
 
