@@ -389,7 +389,7 @@ async function createagencydb(agency_name, created_by) {
 }
 async function getagencydb() {
   try {
-    const getQuery = `SELECT * FROM agencies WHERE is_active = true`; // Fetch only active agencies
+    const getQuery = `SELECT * FROM agencies where agency_id != 1 `; // Fetch only active agencies
     const data = await poolmwp.query(getQuery);
 
     if (data.rows.length === 0) {
@@ -666,12 +666,13 @@ async function updateMetadatadb(id, updatedData) {
     );
 
     if (rows.length === 0) {
+      await client.query("ROLLBACK");
       return { error: true, errorMessage: "Metadata not found." };
     }
 
     const previousData = rows[0];
 
-    // Check if updatedData contains any fields to update
+    // Check if updatedData contains any changes
     const hasUpdates = Object.keys(updatedData).some(
       (key) =>
         updatedData[key] !== undefined &&
@@ -679,6 +680,7 @@ async function updateMetadatadb(id, updatedData) {
     );
 
     if (!hasUpdates) {
+      await client.query("ROLLBACK");
       return { error: true, errorMessage: "No updates provided or no changes detected." };
     }
 
@@ -686,32 +688,49 @@ async function updateMetadatadb(id, updatedData) {
 
     // Merge provided fields with the previous data
     const newData = {
-      product_name: updatedData.product_name ?? previousData.product_name,
-      contact: updatedData.contact ?? previousData.contact,
-      statistical_presentation_and_description:
-        updatedData.statistical_presentation_and_description ??
-        previousData.statistical_presentation_and_description,
-      institutional_mandate:
-        updatedData.institutional_mandate ?? previousData.institutional_mandate,
-      quality_management: updatedData.quality_management ?? previousData.quality_management,
-      accuracy_and_reliability:
-        updatedData.accuracy_and_reliability ?? previousData.accuracy_and_reliability,
-      timeliness: updatedData.timeliness ?? previousData.timeliness,
-      coherence_and_comparability:
-        updatedData.coherence_and_comparability ?? previousData.coherence_and_comparability,
-      statistical_processing:
-        updatedData.statistical_processing ?? previousData.statistical_processing,
-      metadata_update: updatedData.metadata_update ?? previousData.metadata_update,
-      released_data_link:
-        updatedData.released_data_link ?? previousData.released_data_link,
-      metadata_id: metadataId,
+      metadata_id: previousData.metadata_id,
       agency_id: previousData.agency_id,
+      product_name: updatedData.product_name ?? previousData.product_name,
+      contact_organisation: updatedData.contact_organisation ?? previousData.contact_organisation,
+      compiling_agency: updatedData.compiling_agency ?? previousData.compiling_agency,
+      contact_details: updatedData.contact_details ?? previousData.contact_details,
+      data_description: updatedData.data_description ?? previousData.data_description,
+      classification_system: updatedData.classification_system ?? previousData.classification_system,
+      sector_coverage: updatedData.sector_coverage ?? previousData.sector_coverage,
+      statistical_concepts_and_definitions: updatedData.statistical_concepts_and_definitions ?? previousData.statistical_concepts_and_definitions,
+      statistical_unit: updatedData.statistical_unit ?? previousData.statistical_unit,
+      statistical_population: updatedData.statistical_population ?? previousData.statistical_population,
+      reference_period: updatedData.reference_period ?? previousData.reference_period,
+      data_confidentiality: updatedData.data_confidentiality ?? previousData.data_confidentiality,
+      legal_acts_and_other_agreements: updatedData.legal_acts_and_other_agreements ?? previousData.legal_acts_and_other_agreements,
+      data_sharing: updatedData.data_sharing ?? previousData.data_sharing,
+      release_policy: updatedData.release_policy ?? previousData.release_policy,
+      release_calendar: updatedData.release_calendar ?? previousData.release_calendar,
+      frequency_of_dissemination: updatedData.frequency_of_dissemination ?? previousData.frequency_of_dissemination,
+      data_access: updatedData.data_access ?? previousData.data_access,
+      documentation_on_methodology: updatedData.documentation_on_methodology ?? previousData.documentation_on_methodology,
+      quality_documentation: updatedData.quality_documentation ?? previousData.quality_documentation,
+      quality_assurance: updatedData.quality_assurance ?? previousData.quality_assurance,
+      quality_assessment: updatedData.quality_assessment ?? previousData.quality_assessment,
+      sampling_error: updatedData.sampling_error ?? previousData.sampling_error,
+      timeliness: updatedData.timeliness ?? previousData.timeliness,
+      comparability_overtime: updatedData.comparability_overtime ?? previousData.comparability_overtime,
+      coherence: updatedData.coherence ?? previousData.coherence,
+      source_data_type: updatedData.source_data_type ?? previousData.source_data_type,
+      frequency_of_data_collection: updatedData.frequency_of_data_collection ?? previousData.frequency_of_data_collection,
+      data_collection_method: updatedData.data_collection_method ?? previousData.data_collection_method,
+      data_validation: updatedData.data_validation ?? previousData.data_validation,
+      data_compilation: updatedData.data_compilation ?? previousData.data_compilation,
+      metadata_last_posted: updatedData.metadata_last_posted ?? previousData.metadata_last_posted,
+      metadata_last_update: updatedData.metadata_last_update ?? previousData.metadata_last_update,
+      released_data_link: updatedData.released_data_link ?? previousData.released_data_link,
+      is_active: previousData.is_active,
       version: newVersion,
       latest_version: true,
       created_by: updatedData.created_by || previousData.created_by,
     };
 
-    // Mark the previous row as not the latest
+    // Ensure the previous row is not marked as the latest version
     await client.query(
       `UPDATE metadata 
        SET latest_version = false 
@@ -719,38 +738,18 @@ async function updateMetadatadb(id, updatedData) {
       [id, previousData.version]
     );
 
-    // Insert the new version
+    const columns = Object.keys(newData).join(", ");
+    const placeholders = Object.keys(newData)
+      .map((_, index) => `$${index + 1}`)
+      .join(", ");
+    const values = Object.values(newData);
+
     const insertQuery = `
-      INSERT INTO metadata (
-        metadata_id, agency_id, product_name, contact, 
-        statistical_presentation_and_description, institutional_mandate, 
-        quality_management, accuracy_and_reliability, timeliness, 
-        coherence_and_comparability, statistical_processing, metadata_update, 
-        released_data_link, version, latest_version, created_by
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
-      ) RETURNING *`;
+      INSERT INTO metadata (${columns})
+      VALUES (${placeholders}) 
+      RETURNING *`;
 
-    const insertValues = [
-      newData.metadata_id,
-      newData.agency_id,
-      newData.product_name,
-      newData.contact,
-      newData.statistical_presentation_and_description,
-      newData.institutional_mandate,
-      newData.quality_management,
-      newData.accuracy_and_reliability,
-      newData.timeliness,
-      newData.coherence_and_comparability,
-      newData.statistical_processing,
-      newData.metadata_update,
-      newData.released_data_link,
-      newData.version,
-      newData.latest_version,
-      newData.created_by,
-    ];
-
-    const insertResult = await client.query(insertQuery, insertValues);
+    const insertResult = await client.query(insertQuery, values);
 
     await client.query("COMMIT");
     return { success: true, data: insertResult.rows[0] };
@@ -762,6 +761,7 @@ async function updateMetadatadb(id, updatedData) {
     client.release();
   }
 }
+
 async function getAllMetadatadb() {
   try {
     const query = `

@@ -787,7 +787,7 @@ const updateMetadata = async (req, res) => {
     }
 
     // Validate if updatedData contains any fields
-    if (Object.keys(updatedData).length === 0) {
+    if (!updatedData || Object.keys(updatedData).length === 0) {
       return res.status(400).json({
         error: "No updates provided.",
         statuscode: 400,
@@ -817,6 +817,7 @@ const updateMetadata = async (req, res) => {
     });
   }
 };
+
 const searchMetadata = async (req, res) => {
   try {
     const { product_name, version, agency_id } = req.query;
