@@ -16,6 +16,7 @@ const {
   getUser,
   deleteUser,
   updateUser,
+  getMetadataAllVersion,
   getallusertypes,
   createMetadata,
   updateMetadata,
@@ -62,6 +63,7 @@ router.route("/mwp/agency/:agency_name").put(verifyJWT, updateagency);
 
 router.route("/mwp/metadata").post(verifyJWT, createMetadata); 
 router.route("/metadata").get(getAllMetadata);
+router.route("/mwp/metadata").get(getMetadataAllVersion);
 router.route("/mwp/metadata/:id").put(verifyJWT, updateMetadata);
 router.route("/metadata/search").get(searchMetadata);
 router.route("/mwp/metadata/:id").delete(verifyJWT, deleteMetadata);

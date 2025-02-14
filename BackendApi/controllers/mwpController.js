@@ -21,6 +21,7 @@ const {
   createMetadatadb,
   updateMetadatadb,
   getAllMetadatadb,
+  getMetadataAllVersiondb,
   deleteMetadatadb,
   searchMetadataDb,
 
@@ -412,7 +413,6 @@ const getallusertypes = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", statusCode: 500 });
   }
 };
-
 
 //AGENCY
 
@@ -817,7 +817,6 @@ const updateMetadata = async (req, res) => {
     });
   }
 };
-
 const searchMetadata = async (req, res) => {
   try {
     const { product_name, version, agency_id } = req.query;
@@ -867,6 +866,32 @@ const deleteMetadata = async (req, res) => {
     });
   }
 };
+
+const getMetdataAllVersion = async (req,res) =>{
+  try {
+    const result = await getMetadataAllVersiondb();
+
+    if (result.error) {
+      return res.status(500).json({
+        error: result.errorMessage,
+        statuscode:500
+      });
+    }
+
+    return res.status(200).json({
+      error: false,
+      data: result.data,
+      message: "Metadata fetched successfully.",
+      statuscode:200
+    });
+  } catch (error) {
+    console.error("Error in getAllMetadata:", error);
+    return res.status(500).json({
+      error: `Error in getAllMetadata: ${error.message}`,
+      statuscode:500
+    });
+}
+}
 // const getMetaDataByProductName = async (req, res) => {
 //   const { Product } = req.params;
   
@@ -1064,6 +1089,7 @@ module.exports = {
   updateagency,
   deleteagency,
 
+  getMetadataAllVersion,
   createMetadata,
   getAllMetadata,
   updateMetadata,

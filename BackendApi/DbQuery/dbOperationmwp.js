@@ -331,7 +331,7 @@ async function deleteUserDb(username) {
   }
 }
 async function getUsertypeFromUsername(username) {
-  const query = `SELECT usertype FROM users WHERE username = $1 AND is_active = TRUE`;
+  const query = `SELECT usertype FROM users WHERE username = $1`;
   
   try {
     const result = await poolmwp.query(query, [username]);
@@ -763,6 +763,23 @@ async function updateMetadatadb(id, updatedData) {
   }
 }
 
+async function getMetadataAllVersiondb(){
+  try{
+    const query= `SELECT * FROM metadata WHERE is_active = true ORDER BY created_at DESC`;
+    const result = await poolmwp.query(query);
+    return {
+      error: false,
+      data: result.rows,
+    };
+  } catch (error) {
+    console.error("Error in getMetadataAllVersiondb:", error);
+    return {
+      error: true,
+      errorMessage: `Error in getMetadataAllVersiondb: ${error.message}`,
+    };
+  }
+}
+
 async function getAllMetadatadb() {
   try {
     const query = `
@@ -1107,6 +1124,7 @@ module.exports = {
 
   createMetadatadb,
   getAllMetadatadb,
+  getMetadataAllVersiondb,
   updateMetadatadb,
   deleteMetadatadb,
   searchMetadataDb,
