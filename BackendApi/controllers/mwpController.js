@@ -867,7 +867,7 @@ const deleteMetadata = async (req, res) => {
   }
 };
 
-const getMetdataAllVersion = async (req,res) =>{
+const getMetadataAllVersion = async (req,res) =>{
   try {
     const result = await getMetadataAllVersiondb();
 
