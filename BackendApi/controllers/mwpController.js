@@ -363,55 +363,26 @@ const getallusertypes = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", statusCode: 500 });
   }
 };
+
 const activateUser = async (req, res) => {
   const { user_id } = req.params;
-  const { usertype } = req.user;
 
   try {
-    const allowedRoles = await allowedDeactivateOperations(usertype);
-
-    // Ensure `allowedRoles` is an array and check permissions
-    if (!Array.isArray(allowedRoles) || !allowedRoles.includes(usertype)) {
-      return res.status(403).json({
-        error: `You don't have access to activate a user with usertype: ${usertype}`,
-        statuscode: 403,
-      });
-    }
-
     const user = await activateUserDb(user_id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
     res.status(200).json({ message: "User activated successfully", user });
   } catch (error) {
     console.error("Error activating user:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 const deactivateUser = async (req, res) => {
   const { user_id } = req.params;
-  const { usertype } = req.user;
 
   try {
-    const allowed = await allowedDeactivateOperations(usertype);
-
-    if (Array.isArray(allowed) && allowed.length > 0) {
-      const parsedAllowed = JSON.parse(allowed[0]);
-
-      if (!parsedAllowed.includes(usertype)) {
-        return res.status(405).json({
-          error: `You don't have access to deactivate a user with usertype: ${usertype}`,
-          statuscode: 405,
-        });
-      }
-    } else {
-      return res.status(500).json({
-        error: "Invalid allowed operations data",
-        statuscode: 500,
-      });
-    }
-
     const user = await deactivateUserDb(user_id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -422,7 +393,6 @@ const deactivateUser = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 const activateAgency = async (req, res) => {
   const { agency_id } = req.params;
 
@@ -437,7 +407,6 @@ const activateAgency = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 const deactivateAgency = async (req, res) => {
   const { agency_id } = req.params;
 
