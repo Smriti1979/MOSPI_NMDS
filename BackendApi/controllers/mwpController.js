@@ -32,6 +32,7 @@ const {
   allowedCreateOperations,
   allowedUpdateOperations,
   allowedReadOperations,
+  allowedDeactivateOperations,
 
   getagencyidbyusernamedb,
   getAllUserTypesDb,
@@ -366,6 +367,24 @@ const activateUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
+
+      const allowed = await allowedDeactivateOperations(user.usertype);
+
+      if (Array.isArray(allowed) && allowed.length > 0) {
+        const parsedAllowed = JSON.parse(allowed[0]);
+  
+        if (!parsedAllowed.includes(usertype)) {
+          return res.status(405).json({
+            error: `You don't have access to deactivate a user with usertype: ${usertype}`,
+            statuscode: 405,
+          });
+        }
+      } else {
+        return res.status(500).json({
+          error: "Invalid allowed operations data",
+          statuscode: 500,
+        });
+      }
       const user = await activateUserDb(userId);
       if (!user) {
           return res.status(404).json({ message: "User not found" });
@@ -380,6 +399,25 @@ const deactivateUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
+
+    const allowed = await allowedDeactivateOperations(user.usertype);
+
+    if (Array.isArray(allowed) && allowed.length > 0) {
+      const parsedAllowed = JSON.parse(allowed[0]);
+
+      if (!parsedAllowed.includes(usertype)) {
+        return res.status(405).json({
+          error: `You don't have access to deactivate a user with usertype: ${usertype}`,
+          statuscode: 405,
+        });
+      }
+    } else {
+      return res.status(500).json({
+        error: "Invalid allowed operations data",
+        statuscode: 500,
+      });
+    }
+
       const user = await deactivateUserDb(userId);
       if (!user) {
           return res.status(404).json({ message: "User not found" });
@@ -496,6 +534,25 @@ const activateAgency = async (req, res) => {
   const { agencyId } = req.params;
 
   try {
+
+    const allowed = await allowedDeactivateOperations(user.usertype);
+
+    if (Array.isArray(allowed) && allowed.length > 0) {
+      const parsedAllowed = JSON.parse(allowed[0]);
+
+      if (!parsedAllowed.includes(usertype)) {
+        return res.status(405).json({
+          error: `You don't have access to deactivate a user with usertype: ${usertype}`,
+          statuscode: 405,
+        });
+      }
+    } else {
+      return res.status(500).json({
+        error: "Invalid allowed operations data",
+        statuscode: 500,
+      });
+    }
+
       const agency = await activeAgencydb(agencyId);
       if (!agency) {
           return res.status(404).json({ message: "Agency not found" });
@@ -510,6 +567,25 @@ const deactivateAgency = async (req, res) => {
   const { agencyId } = req.params;
 
   try {
+
+    const allowed = await allowedDeactivateOperations(user.usertype);
+
+    if (Array.isArray(allowed) && allowed.length > 0) {
+      const parsedAllowed = JSON.parse(allowed[0]);
+
+      if (!parsedAllowed.includes(usertype)) {
+        return res.status(405).json({
+          error: `You don't have access to deactivate a user with usertype: ${usertype}`,
+          statuscode: 405,
+        });
+      }
+    } else {
+      return res.status(500).json({
+        error: "Invalid allowed operations data",
+        statuscode: 500,
+      });
+    }
+    
       const agency = await deactiveAgencydb(agencyId);
       if (!agency) {
           return res.status(404).json({ message: "Agency not found" });

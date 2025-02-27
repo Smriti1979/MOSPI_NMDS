@@ -71,7 +71,7 @@ const allowedReadOperations = async (usertype) => {
     throw new Error("Failed to fetch allowed read operations");
   }
 };
-const allowedDeleteOperations = async (usertype) => {
+const allowedDeactivateOperations = async (usertype) => {
   try {
     // Execute the query with a parameterized usertype
     const result = await poolmwp.query(
@@ -828,7 +828,7 @@ module.exports = {
   getUsertypeFromUsername,
 
   allowedCreateOperations,
-  allowedDeleteOperations,
+  allowedDeactivateOperations,
   allowedUpdateOperations,
   allowedReadOperations,
 
