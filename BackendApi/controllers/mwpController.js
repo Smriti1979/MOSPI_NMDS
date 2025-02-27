@@ -364,43 +364,37 @@ const getallusertypes = async (req, res) => {
   }
 };
 const activateUser = async (req, res) => {
-  const { userId } = req.params;
+  const { user_id } = req.params;
+  const { usertype } = req.user;
 
   try {
+    const allowedRoles = await allowedDeactivateOperations(usertype);
 
-      const allowed = await allowedDeactivateOperations(user.usertype);
+    // Ensure `allowedRoles` is an array and check permissions
+    if (!Array.isArray(allowedRoles) || !allowedRoles.includes(usertype)) {
+      return res.status(403).json({
+        error: `You don't have access to activate a user with usertype: ${usertype}`,
+        statuscode: 403,
+      });
+    }
 
-      if (Array.isArray(allowed) && allowed.length > 0) {
-        const parsedAllowed = JSON.parse(allowed[0]);
-  
-        if (!parsedAllowed.includes(usertype)) {
-          return res.status(405).json({
-            error: `You don't have access to deactivate a user with usertype: ${usertype}`,
-            statuscode: 405,
-          });
-        }
-      } else {
-        return res.status(500).json({
-          error: "Invalid allowed operations data",
-          statuscode: 500,
-        });
-      }
-      const user = await activateUserDb(userId);
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json({ message: "User activated successfully", user });
+    const user = await activateUserDb(user_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "User activated successfully", user });
   } catch (error) {
-      console.error("Error activating user:", error);
-      res.status(500).json({ message: "Internal server error" });
+    console.error("Error activating user:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 const deactivateUser = async (req, res) => {
-  const { userId } = req.params;
+  const { user_id } = req.params;
+  const { usertype } = req.user;
 
   try {
-
-    const allowed = await allowedDeactivateOperations(user.usertype);
+    const allowed = await allowedDeactivateOperations(usertype);
 
     if (Array.isArray(allowed) && allowed.length > 0) {
       const parsedAllowed = JSON.parse(allowed[0]);
@@ -418,14 +412,44 @@ const deactivateUser = async (req, res) => {
       });
     }
 
-      const user = await deactivateUserDb(userId);
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json({ message: "User deactivated successfully", user });
+    const user = await deactivateUserDb(user_id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({ message: "User deactivated successfully", user });
   } catch (error) {
-      console.error("Error deactivating user:", error);
-      res.status(500).json({ message: "Internal server error" });
+    console.error("Error deactivating user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const activateAgency = async (req, res) => {
+  const { agency_id } = req.params;
+
+  try {
+    const agency = await activeAgencydb(agency_id);
+    if (!agency) {
+      return res.status(404).json({ message: "Agency not found" });
+    }
+    res.status(200).json({ message: "Agency activated successfully", agency });
+  } catch (error) {
+    console.error("Error activating agency:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const deactivateAgency = async (req, res) => {
+  const { agency_id } = req.params;
+
+  try {
+    const agency = await deactiveAgencydb(agency_id);
+    if (!agency) {
+      return res.status(404).json({ message: "Agency not found" });
+    }
+    res.status(200).json({ message: "Agency deactivated successfully", agency });
+  } catch (error) {
+    console.error("Error deactivating agency:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 const createagency = async (req, res) => {
@@ -528,72 +552,6 @@ const updateagency = async (req, res) => {
     return res
       .status(500)
       .json({ error: `Error in updating agency data: ${error}`, statuscode:500 });
-  }
-};
-const activateAgency = async (req, res) => {
-  const { agency_id } = req.params;
-
-  try {
-
-    const allowed = await allowedDeactivateOperations(user.usertype);
-
-    if (Array.isArray(allowed) && allowed.length > 0) {
-      const parsedAllowed = JSON.parse(allowed[0]);
-
-      if (!parsedAllowed.includes(usertype)) {
-        return res.status(405).json({
-          error: `You don't have access to deactivate a user with usertype: ${usertype}`,
-          statuscode: 405,
-        });
-      }
-    } else {
-      return res.status(500).json({
-        error: "Invalid allowed operations data",
-        statuscode: 500,
-      });
-    }
-
-      const agency = await activeAgencydb(agency_id);
-      if (!agency) {
-          return res.status(404).json({ message: "Agency not found" });
-      }
-      res.status(200).json({ message: "Agency activated successfully", agency });
-  } catch (error) {
-      console.error("Error activating agency:", error);
-      res.status(500).json({ message: "Internal server error" });
-  }
-};
-const deactivateAgency = async (req, res) => {
-  const { agency_id } = req.params;
-
-  try {
-
-    const allowed = await allowedDeactivateOperations(user.usertype);
-
-    if (Array.isArray(allowed) && allowed.length > 0) {
-      const parsedAllowed = JSON.parse(allowed[0]);
-
-      if (!parsedAllowed.includes(usertype)) {
-        return res.status(405).json({
-          error: `You don't have access to deactivate a user with usertype: ${usertype}`,
-          statuscode: 405,
-        });
-      }
-    } else {
-      return res.status(500).json({
-        error: "Invalid allowed operations data",
-        statuscode: 500,
-      });
-    }
-    
-      const agency = await deactiveAgencydb(agency_id);
-      if (!agency) {
-          return res.status(404).json({ message: "Agency not found" });
-      }
-      res.status(200).json({ message: "Agency deactivated successfully", agency });
-  } catch (error) {
-      console.error("Error deactivating agency:", error);
-      res.status(500).json({ message: "Internal server error" });
   }
 };
 const createMetadata = async (req, res) => {
@@ -914,7 +872,7 @@ exports.login = async (req, res) => {
   const user = await user.findOne({ where: { username } });
 
   if (user && bcrypt.compareSync(password, user.password)) {
-    const token = jwt.sign({ userId: user.id, role: user.roleId }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ user_id: user.id, role: user.roleId }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
     res.json({ token });

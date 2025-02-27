@@ -73,27 +73,41 @@ const allowedReadOperations = async (usertype) => {
 };
 const allowedDeactivateOperations = async (usertype) => {
   try {
-    // Execute the query with a parameterized usertype
     const result = await poolmwp.query(
-      `SELECT candelete
-       FROM userroles
-       WHERE usertype = $1;`,
+      `SELECT candelete FROM userroles WHERE usertype = $1;`,
       [usertype]
     );
 
-    // Return the rows (or an empty array if no results)
-    return result.rows.map(row => row.candelete);
+    if (!result.rows.length) return []; // Return empty array if no data found
+
+    let allowedRoles = result.rows.map(row => row.candelete);
+
+    // Ensure all values are parsed into arrays
+    allowedRoles = allowedRoles.map(role => {
+      if (typeof role === "string") {
+        try {
+          const parsedRole = JSON.parse(role);
+          return Array.isArray(parsedRole) ? parsedRole : [parsedRole];
+        } catch (error) {
+          return [role]; // If parsing fails, wrap the string in an array
+        }
+      }
+      return Array.isArray(role) ? role : [role]; // Ensure everything is an array
+    });
+
+    return allowedRoles.flat(); // Flatten to return a single array
   } catch (error) {
     console.error("Error fetching allowed delete operations:", error);
     throw new Error("Failed to fetch allowed delete operations");
   }
 };
+
 async function EmailValidation(username) {
   const query = "SELECT * FROM users WHERE username = $1";
   const result = await poolmwp.query(query, [username]);
   return result.rows[0];
 }
-async function updatePassword(userId, hashedPassword) {
+async function updatePassword(user_id, hashedPassword) {
   const query = `
     UPDATE users
     SET password = $1, newuser = false
@@ -101,7 +115,7 @@ async function updatePassword(userId, hashedPassword) {
     RETURNING user_id, username;
   `;
 
-  const result = await poolmwp.query(query, [hashedPassword, userId]);
+  const result = await poolmwp.query(query, [hashedPassword, user_id]);
   return result.rows[0]; // Returns updated user details or undefined if no match
 }
 async function getagency_idbyusernamedb(username) {
@@ -256,23 +270,23 @@ async function updateUserDb(username, fieldsToUpdate) {
     };
   }
 }
-async function activateUserDb (userId) {
-  const query = "UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING *";
-  const values = [userId];
+async function activateUserDb (user_id) {
+  const query = "UPDATE users SET is_active = TRUE WHERE user_id = $1 RETURNING *";
+  const values = [user_id];
 
   try {
-      const result = await pool.query(query, values);
+      const result = await poolmwp.query(query, values);
       return result.rows[0]; // Return updated user data
   } catch (error) {
       throw error;
   }
 };
-async function deactivateUserDb(userId) {
-  const query = "UPDATE users SET is_active = FALSE WHERE id = $1 RETURNING *";
-  const values = [userId];
+async function deactivateUserDb(user_id) {
+  const query = "UPDATE users SET is_active = FALSE WHERE user_id = $1 RETURNING *";
+  const values = [user_id];
 
   try {
-      const result = await pool.query(query, values);
+      const result = await poolmwp.query(query, values);
       return result.rows[0]; // Return updated user data
   } catch (error) {
       throw error;
@@ -378,22 +392,22 @@ async function updateagencydb(agency_name, new_agency_name) {
   return data.rows[0];
 }
 async function activeAgencydb(agency_id) {
-    const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
+    const query = "UPDATE agencies SET is_active = TRUE WHERE agency_id = $1 RETURNING *";
     const values = [agency_id];
 
     try {
-        const result = await pool.query(query, values);
+        const result = await poolmwp.query(query, values);
         return result.rows[0]; // Return updated agency data
     } catch (error) {
         throw error;
     }
 };
 async function deactiveAgencydb (agency_id){
-    const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
+    const query = "UPDATE agencies SET is_active = FALSE WHERE agency_id = $1 RETURNING *";
     const values = [agency_id];
 
     try {
-        const result = await pool.query(query, values);
+        const result = await poolmwp.query(query, values);
         return result.rows[0]; // Return updated agency data
     } catch (error) {
         throw error;

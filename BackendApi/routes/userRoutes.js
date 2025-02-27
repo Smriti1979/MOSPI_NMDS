@@ -41,8 +41,8 @@ router.route("/signin").post(signin);
 
 router.route("/mwp/user").post(verifyJWT,createUser); 
 router.route("/mwp/user").get(verifyJWT,getUser);  
-router.route("mwp/activate/:user_id").put (verifyJWT,activateUser);
-router.route("mwp/deactivate/:user_id").put(verifyJWT, deactivateUser);
+router.route("/mwp/activate/user/:user_id").put (verifyJWT,activateUser);
+router.route("/mwp/deactivate/user/:user_id").put(verifyJWT, deactivateUser);
 router.route("/mwp/user/:username").put(verifyJWT,updateUser); 
 router.route("/mwp/usertypes").get(verifyJWT, getallusertypes);
 router.route("/user/changepassword").put(changePassword);
@@ -52,8 +52,8 @@ router.route("/user/changepassword").put(changePassword);
 router.route("/mwp/agency").post(verifyJWT, createagency);
 router.route("/agency").get(getagency); 
 router.route("/mwp/agency/:agency_name").put(verifyJWT, updateagency);
-router.route("mwp/activate/:agency_id").put (verifyJWT,activateAgency);
-router.route("mwp/deactivate/:agency_id").put (verifyJWT, deactivateAgency);
+router.route("/mwp/activate/agency/:agency_id").put (verifyJWT,activateAgency);
+router.route("/mwp/deactivate/agency/:agency_id").put (verifyJWT, deactivateAgency);
 
 //METADATA
 
