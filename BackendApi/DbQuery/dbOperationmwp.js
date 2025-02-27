@@ -205,7 +205,6 @@ async function createUserdb(agency_id, username, password, usertype, name, email
       client.release();
   }
 }
-
 async function getUserdb(allowedUsertypes) {
   try {
     const query = `
@@ -331,30 +330,30 @@ async function updateUserDb(username, fieldsToUpdate) {
 //   }
 // }
 
-// async function activateUserDb (userId) {
-//   const query = "UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING *";
-//   const values = [userId];
+async function activateUserDb (userId) {
+  const query = "UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING *";
+  const values = [userId];
 
-//   try {
-//       const result = await pool.query(query, values);
-//       return result.rows[0]; // Return updated user data
-//   } catch (error) {
-//       throw error;
-//   }
-// };
+  try {
+      const result = await pool.query(query, values);
+      return result.rows[0]; // Return updated user data
+  } catch (error) {
+      throw error;
+  }
+};
 
 // Deactivate User
-// async function deactivateUserDb(userId) {
-//   const query = "UPDATE users SET is_active = FALSE WHERE id = $1 RETURNING *";
-//   const values = [userId];
+async function deactivateUserDb(userId) {
+  const query = "UPDATE users SET is_active = FALSE WHERE id = $1 RETURNING *";
+  const values = [userId];
 
-//   try {
-//       const result = await pool.query(query, values);
-//       return result.rows[0]; // Return updated user data
-//   } catch (error) {
-//       throw error;
-//   }
-// };
+  try {
+      const result = await pool.query(query, values);
+      return result.rows[0]; // Return updated user data
+  } catch (error) {
+      throw error;
+  }
+};
 
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;
@@ -457,30 +456,30 @@ async function updateagencydb(agency_name, new_agency_name) {
 }
 
 // Activate Agency
-// async function activeAgencydb(agencyId) {
-//     const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
-//     const values = [agencyId];
+async function activeAgencydb(agencyId) {
+    const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
+    const values = [agencyId];
 
-//     try {
-//         const result = await pool.query(query, values);
-//         return result.rows[0]; // Return updated agency data
-//     } catch (error) {
-//         throw error;
-//     }
-// };
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0]; // Return updated agency data
+    } catch (error) {
+        throw error;
+    }
+};
 
 // // Deactivate Agency
-// async function deactiveAgencydb (agencyId){
-//     const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
-//     const values = [agencyId];
+async function deactiveAgencydb (agencyId){
+    const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
+    const values = [agencyId];
 
-//     try {
-//         const result = await pool.query(query, values);
-//         return result.rows[0]; // Return updated agency data
-//     } catch (error) {
-//         throw error;
-//     }
-// };
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0]; // Return updated agency data
+    } catch (error) {
+        throw error;
+    }
+};
 
 // async function deleteagencydb(agency_name) {
 //   try {
@@ -849,7 +848,7 @@ async function getAllMetadatadb() {
         metadata_last_update, version, latest_version, released_data_link,
         created_by, created_at, updated_by, updated_at
       FROM metadata
-      WHERE is_active = true -- Only fetch active metadata entries
+      WHERE is_active = true AND latest_version= true -- Only fetch active metadata entries
       ORDER BY created_at DESC; -- Sort by created_at
     `;
 
@@ -1168,15 +1167,15 @@ module.exports = {
   createUserdb,
   getUserdb,
   updateUserDb,
-  // activateUserDb,
-  // deactivateUserDb,
+  activateUserDb,
+  deactivateUserDb,
   // deleteUserDb,
   
   createagencydb,
   getagencydb,
   updateagencydb,
-  // activeAgencydb,
-  // deactiveAgencydb,
+  activeAgencydb,
+  deactiveAgencydb,
   // // deleteagencydb,
 
   createMetadatadb,
