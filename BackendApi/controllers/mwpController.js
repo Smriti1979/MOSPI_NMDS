@@ -34,7 +34,7 @@ const {
   allowedReadOperations,
   allowedDeactivateOperations,
 
-  getagencyidbyusernamedb,
+  getagency_idbyusernamedb,
   getAllUserTypesDb,
   getNextMetadataId,
   checkAgencyExists 
@@ -531,7 +531,7 @@ const updateagency = async (req, res) => {
   }
 };
 const activateAgency = async (req, res) => {
-  const { agencyId } = req.params;
+  const { agency_id } = req.params;
 
   try {
 
@@ -553,7 +553,7 @@ const activateAgency = async (req, res) => {
       });
     }
 
-      const agency = await activeAgencydb(agencyId);
+      const agency = await activeAgencydb(agency_id);
       if (!agency) {
           return res.status(404).json({ message: "Agency not found" });
       }
@@ -564,7 +564,7 @@ const activateAgency = async (req, res) => {
   }
 };
 const deactivateAgency = async (req, res) => {
-  const { agencyId } = req.params;
+  const { agency_id } = req.params;
 
   try {
 
@@ -586,7 +586,7 @@ const deactivateAgency = async (req, res) => {
       });
     }
     
-      const agency = await deactiveAgencydb(agencyId);
+      const agency = await deactiveAgencydb(agency_id);
       if (!agency) {
           return res.status(404).json({ message: "Agency not found" });
       }
@@ -608,7 +608,7 @@ const createMetadata = async (req, res) => {
       });
     }
 
-    const agency_id = await getagencyidbyusernamedb(user.username);
+    const agency_id = await getagency_idbyusernamedb(user.username);
 
     // Extract fields from the request body
     const {

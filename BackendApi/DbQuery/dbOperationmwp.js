@@ -104,7 +104,7 @@ async function updatePassword(userId, hashedPassword) {
   const result = await poolmwp.query(query, [hashedPassword, userId]);
   return result.rows[0]; // Returns updated user details or undefined if no match
 }
-async function getagencyidbyusernamedb(username) {
+async function getagency_idbyusernamedb(username) {
   try {
     // Validate the input
     if (!username) {
@@ -377,9 +377,9 @@ async function updateagencydb(agency_name, new_agency_name) {
   }
   return data.rows[0];
 }
-async function activeAgencydb(agencyId) {
+async function activeAgencydb(agency_id) {
     const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
-    const values = [agencyId];
+    const values = [agency_id];
 
     try {
         const result = await pool.query(query, values);
@@ -388,9 +388,9 @@ async function activeAgencydb(agencyId) {
         throw error;
     }
 };
-async function deactiveAgencydb (agencyId){
+async function deactiveAgencydb (agency_id){
     const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
-    const values = [agencyId];
+    const values = [agency_id];
 
     try {
         const result = await pool.query(query, values);
@@ -832,7 +832,7 @@ module.exports = {
   allowedUpdateOperations,
   allowedReadOperations,
 
-  getagencyidbyusernamedb,
+  getagency_idbyusernamedb,
   getAllUserTypesDb,
   getNextMetadataId,
   checkAgencyExists 
@@ -840,7 +840,7 @@ module.exports = {
   // getAllowedRoles,
   // getRoleNameByUsertype
 
-  // getMetadataByAgencyIddb
+  // getMetadataByagency_iddb
 
   // deleteMetadatadb,
   // updateMetadataDevdb,
