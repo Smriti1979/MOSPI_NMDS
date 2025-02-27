@@ -331,30 +331,30 @@ async function updateUserDb(username, fieldsToUpdate) {
 //   }
 // }
 
-async function activateUserDb (userId) {
-  const query = "UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING *";
-  const values = [userId];
+// async function activateUserDb (userId) {
+//   const query = "UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING *";
+//   const values = [userId];
 
-  try {
-      const result = await pool.query(query, values);
-      return result.rows[0]; // Return updated user data
-  } catch (error) {
-      throw error;
-  }
-};
+//   try {
+//       const result = await pool.query(query, values);
+//       return result.rows[0]; // Return updated user data
+//   } catch (error) {
+//       throw error;
+//   }
+// };
 
 // Deactivate User
-async function deactivateUserDb(userId) {
-  const query = "UPDATE users SET is_active = FALSE WHERE id = $1 RETURNING *";
-  const values = [userId];
+// async function deactivateUserDb(userId) {
+//   const query = "UPDATE users SET is_active = FALSE WHERE id = $1 RETURNING *";
+//   const values = [userId];
 
-  try {
-      const result = await pool.query(query, values);
-      return result.rows[0]; // Return updated user data
-  } catch (error) {
-      throw error;
-  }
-};
+//   try {
+//       const result = await pool.query(query, values);
+//       return result.rows[0]; // Return updated user data
+//   } catch (error) {
+//       throw error;
+//   }
+// };
 
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;
@@ -455,33 +455,32 @@ async function updateagencydb(agency_name, new_agency_name) {
   }
   return data.rows[0];
 }
-const pool = require("../config/db"); // PostgreSQL connection pool
 
 // Activate Agency
-async function activeAgencydb(agencyId) {
-    const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
-    const values = [agencyId];
+// async function activeAgencydb(agencyId) {
+//     const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
+//     const values = [agencyId];
 
-    try {
-        const result = await pool.query(query, values);
-        return result.rows[0]; // Return updated agency data
-    } catch (error) {
-        throw error;
-    }
-};
+//     try {
+//         const result = await pool.query(query, values);
+//         return result.rows[0]; // Return updated agency data
+//     } catch (error) {
+//         throw error;
+//     }
+// };
 
-// Deactivate Agency
-async function deactiveAgencydb (agencyId){
-    const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
-    const values = [agencyId];
+// // Deactivate Agency
+// async function deactiveAgencydb (agencyId){
+//     const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
+//     const values = [agencyId];
 
-    try {
-        const result = await pool.query(query, values);
-        return result.rows[0]; // Return updated agency data
-    } catch (error) {
-        throw error;
-    }
-};
+//     try {
+//         const result = await pool.query(query, values);
+//         return result.rows[0]; // Return updated agency data
+//     } catch (error) {
+//         throw error;
+//     }
+// };
 
 // async function deleteagencydb(agency_name) {
 //   try {
@@ -1169,16 +1168,16 @@ module.exports = {
   createUserdb,
   getUserdb,
   updateUserDb,
-  activateUserDb,
-  deactivateUserDb,
+  // activateUserDb,
+  // deactivateUserDb,
   // deleteUserDb,
   
   createagencydb,
   getagencydb,
   updateagencydb,
-  activeAgencydb,
-  deactiveAgencydb,
-  // deleteagencydb,
+  // activeAgencydb,
+  // deactiveAgencydb,
+  // // deleteagencydb,
 
   createMetadatadb,
   getAllMetadatadb,

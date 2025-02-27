@@ -12,15 +12,15 @@ const {
   createagencydb,
   getagencydb,
   updateagencydb,
-  activateUserDb,
-  deactivateUserDb,
+  // activateUserDb,
+  // deactivateUserDb,
   // deleteagencydb,
   getUsertypeFromUsername,
   createUserdb,
   getUserdb,
   updateUserDb,
-  activeAgencydb,
-  deactiveAgencydb,
+  // activeAgencydb,
+  // deactiveAgencydb,
   // deleteUserDb,
   createMetadatadb,
   updateMetadatadb,
@@ -417,36 +417,36 @@ const getallusertypes = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", statusCode: 500 });
   }
 };
-const activateUserController = async (req, res) => {
-  const { userId } = req.params;
+// const activateUserController = async (req, res) => {
+//   const { userId } = req.params;
 
-  try {
-      const user = await activateUserDb(userId);
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json({ message: "User activated successfully", user });
-  } catch (error) {
-      console.error("Error activating user:", error);
-      res.status(500).json({ message: "Internal server error" });
-  }
-};
+//   try {
+//       const user = await activateUserDb(userId);
+//       if (!user) {
+//           return res.status(404).json({ message: "User not found" });
+//       }
+//       res.status(200).json({ message: "User activated successfully", user });
+//   } catch (error) {
+//       console.error("Error activating user:", error);
+//       res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
-// Deactivate User Controller
-const deactivateUserController = async (req, res) => {
-  const { userId } = req.params;
+// // Deactivate User Controller
+// const deactivateUserController = async (req, res) => {
+//   const { userId } = req.params;
 
-  try {
-      const user = await deactivateUserDb(userId);
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json({ message: "User deactivated successfully", user });
-  } catch (error) {
-      console.error("Error deactivating user:", error);
-      res.status(500).json({ message: "Internal server error" });
-  }
-};
+//   try {
+//       const user = await deactivateUserDb(userId);
+//       if (!user) {
+//           return res.status(404).json({ message: "User not found" });
+//       }
+//       res.status(200).json({ message: "User deactivated successfully", user });
+//   } catch (error) {
+//       console.error("Error deactivating user:", error);
+//       res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 //AGENCY
 
@@ -553,36 +553,36 @@ const updateagency = async (req, res) => {
   }
 };
 // Activate Agency Controller
-const activateAgencyController = async (req, res) => {
-  const { agencyId } = req.params;
+// const activateAgencyController = async (req, res) => {
+//   const { agencyId } = req.params;
 
-  try {
-      const agency = await activeAgencydb(agencyId);
-      if (!agency) {
-          return res.status(404).json({ message: "Agency not found" });
-      }
-      res.status(200).json({ message: "Agency activated successfully", agency });
-  } catch (error) {
-      console.error("Error activating agency:", error);
-      res.status(500).json({ message: "Internal server error" });
-  }
-};
+//   try {
+//       const agency = await activeAgencydb(agencyId);
+//       if (!agency) {
+//           return res.status(404).json({ message: "Agency not found" });
+//       }
+//       res.status(200).json({ message: "Agency activated successfully", agency });
+//   } catch (error) {
+//       console.error("Error activating agency:", error);
+//       res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
-// Deactivate Agency Controller
-const deactivateAgencyController = async (req, res) => {
-  const { agencyId } = req.params;
+// // Deactivate Agency Controller
+// const deactivateAgencyController = async (req, res) => {
+//   const { agencyId } = req.params;
 
-  try {
-      const agency = await deactiveAgencydb(agencyId);
-      if (!agency) {
-          return res.status(404).json({ message: "Agency not found" });
-      }
-      res.status(200).json({ message: "Agency deactivated successfully", agency });
-  } catch (error) {
-      console.error("Error deactivating agency:", error);
-      res.status(500).json({ message: "Internal server error" });
-  }
-};
+//   try {
+//       const agency = await deactiveAgencydb(agencyId);
+//       if (!agency) {
+//           return res.status(404).json({ message: "Agency not found" });
+//       }
+//       res.status(200).json({ message: "Agency deactivated successfully", agency });
+//   } catch (error) {
+//       console.error("Error deactivating agency:", error);
+//       res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 // const deleteagency = async (req, res) => {
 //   const { agency_name } = req.params;
@@ -1148,15 +1148,15 @@ module.exports = {
   createUser,
   getUser,
   updateUser,
-  activateUserController,
-  deactivateUserController,
+  // activateUserController,
+  // deactivateUserController,
   // deleteUser,
 
   createagency,
   getagency,
   updateagency,
-  activateAgencyController,
-  deactivateAgencyController,
+  // activateAgencyController,
+  // deactivateAgencyController,
   // deleteagency,
 
   getMetadataAllVersion,
