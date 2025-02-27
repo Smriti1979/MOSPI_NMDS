@@ -417,7 +417,7 @@ const getallusertypes = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", statusCode: 500 });
   }
 };
-const activateUserController = async (req, res) => {
+const activateUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
@@ -433,7 +433,7 @@ const activateUserController = async (req, res) => {
 };
 
 // Deactivate User Controller
-const deactivateUserController = async (req, res) => {
+const deactivateUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
@@ -552,7 +552,7 @@ const updateagency = async (req, res) => {
   }
 };
 // Activate Agency Controller
-const activateAgencyController = async (req, res) => {
+const activateAgency = async (req, res) => {
   const { agencyId } = req.params;
 
   try {
@@ -568,7 +568,7 @@ const activateAgencyController = async (req, res) => {
 };
 
 // // Deactivate Agency Controller
-const deactivateAgencyController = async (req, res) => {
+const deactivateAgency = async (req, res) => {
   const { agencyId } = req.params;
 
   try {
@@ -1147,15 +1147,15 @@ module.exports = {
   createUser,
   getUser,
   updateUser,
-  activateUserController,
-  deactivateUserController,
+  activateUser,
+  deactivateUser,
   // deleteUser,
 
   createagency,
   getagency,
   updateagency,
-  activateAgencyController,
-  deactivateAgencyController,
+  activateAgency,
+  deactivateAgency,
   // deleteagency,
 
   getMetadataAllVersion,

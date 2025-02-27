@@ -226,8 +226,7 @@ async function getUserdb(allowedUsertypes) {
       ON 
         users.agency_id = agencies.agency_id
       WHERE 
-        users.is_active = true  -- Only fetch active users
-        AND users.usertype = ANY($1); -- Filter by allowed user types
+        users.usertype = ANY($1); -- Filter by allowed user types
     `;
 
     const users = await poolmwp.query(query, [allowedUsertypes]);

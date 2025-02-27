@@ -10,11 +10,11 @@ const {
   changePassword,
   createagency,
   updateagency,
-  activateUserController,
-  deactivateUserController,
+  activateUser,
+  deactivateUser,
 
-  activateAgencyController,
-  deactivateAgencyController,
+  activateAgency,
+  deactivateAgency,
   // deleteagency,
   getagency,
   createUser,
@@ -55,8 +55,8 @@ router.route("/signin").post(signin);
 
 router.route("/mwp/user").post(verifyJWT,createUser); 
 router.route("/mwp/user").get(verifyJWT,getUser);  
-router.route("mwp/activate/:userId").put (activateUserController);
-router.route("mwp/deactivate/:userId").put( deactivateUserController);
+router.route("mwp/activate/:userId").put (verifyJWT,activateUser);
+router.route("mwp/deactivate/:userId").put(verifyJWT, deactivateUser);
 // router.route("/mwp/user/:username").delete(verifyJWT,deleteUser); 
 router.route("/mwp/user/:username").put(verifyJWT,updateUser); 
 router.route("/mwp/usertypes").get(verifyJWT, getallusertypes);
@@ -67,8 +67,8 @@ router.route("/mwp/agency").post(verifyJWT, createagency);
 // router.route("/mwp/agency/:agency_name").delete(verifyJWT, deleteagency);  
 router.route("/agency").get(getagency); 
 router.route("/mwp/agency/:agency_name").put(verifyJWT, updateagency);
-router.route("/activate/:agencyId").put (activateAgencyController);
-router.route("/deactivate/:agencyId").put (deactivateAgencyController);
+router.route("mwp/activate/:agencyId").put (verifyJWT,activateAgency);
+router.route("mwp/deactivate/:agencyId").put (verifyJWT, deactivateAgency);
 
 router.route("/mwp/metadata").post(verifyJWT, createMetadata); 
 router.route("/metadata").get(getAllMetadata);
