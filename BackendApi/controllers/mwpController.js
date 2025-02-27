@@ -14,23 +14,22 @@ const {
   updateagencydb,
   activateUserDb,
   deactivateUserDb,
-  // deleteagencydb,
+
   getUsertypeFromUsername,
   createUserdb,
   getUserdb,
   updateUserDb,
   activeAgencydb,
   deactiveAgencydb,
-  // deleteUserDb,
+
   createMetadatadb,
   updateMetadatadb,
   getAllMetadatadb,
   getMetadataAllVersiondb,
-  // deleteMetadatadb,
+
   searchMetadataDb,
 
   allowedCreateOperations,
-  allowedDeleteOperations,
   allowedUpdateOperations,
   allowedReadOperations,
 
@@ -39,16 +38,6 @@ const {
   getNextMetadataId,
   checkAgencyExists 
   
-  // getMetadataByAgencyIddb,
-  // getMetaDataByProductNamedb,
-  // getMetaDataByVersionP,
-  // getMetaDataByVersionPV,
-  // updateMetadatadb,
-  // deleteMetadatadb,
- 
-  // getMetaDatadb,
-  // searchMetaDatadb,
-  // getMetadataByAgencydb
 } = mwpdb;
 
 
@@ -83,8 +72,6 @@ function validateUserInput(data) {
 
   return errors;
 }
-
-//SIGNIN
 
 const signin = async (req, res) => {
   const userAgents = req.headers['x-from-swagger'];
@@ -206,9 +193,6 @@ const changePassword = async (req, res) => {
     return res.status(500).json({ error: "Server error during password change.", statuscode:500 });
   }
 };
-
-//USER
-
 const createUser = async (req, res) => {
   const { agency_id, username, password, usertype, name, email, phone, address } = req.body;
   const user = req.user;
@@ -363,45 +347,6 @@ const updateUser = async (req, res) => {
     });
   }
 };
-// const deleteUser = async (req, res) => {
-//   let { username } = req.params;
-//   const user = req.user;
-
-//   try {
-//     const userResult = await getUsertypeFromUsername(username);
-//     if (!userResult || userResult.error) {
-//       return res.status(404).json({
-//         error: `User with username "${username}" not found.`,
-//         statuscode:404
-//       });
-//     }
-
-//     const { usertype } = userResult;
-
-//     const allowed = await allowedDeleteOperations(user.usertype);
-//     console.log("Allowed operations:", allowed);
-
-//     if (!allowed || !allowed.includes(usertype)) {
-//       return res.status(405).json({
-//         error: `You don't have access to delete a user with usertype: ${usertype}`,
-//         statuscode:405
-//       });
-//     }
-
-//     const deletedUser = await deleteUserDb(username);
-//     if (deletedUser.error) {
-//       return res.status(deletedUser.errorCode).json({ error: deletedUser.errorMessage });
-//     }
-
-//     return res.status(200).send({
-//       message: "User deleted successfully",
-//       deletedUser: deletedUser.data, // Optionally include deleted user info
-//       statusCode: 200
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ error: `Error deleting user: ${error.message}`, statuscode:500 });
-//   }
-// };
 const getallusertypes = async (req, res) => {
   try {
     // Call the database query function to get all user types
@@ -431,8 +376,6 @@ const activateUser = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// Deactivate User Controller
 const deactivateUser = async (req, res) => {
   const { userId } = req.params;
 
@@ -447,8 +390,6 @@ const deactivateUser = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 const createagency = async (req, res) => {
   const { agency_name } = req.body;
   try {
@@ -551,7 +492,6 @@ const updateagency = async (req, res) => {
       .json({ error: `Error in updating agency data: ${error}`, statuscode:500 });
   }
 };
-// Activate Agency Controller
 const activateAgency = async (req, res) => {
   const { agencyId } = req.params;
 
@@ -566,8 +506,6 @@ const activateAgency = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// // Deactivate Agency Controller
 const deactivateAgency = async (req, res) => {
   const { agencyId } = req.params;
 
@@ -582,35 +520,6 @@ const deactivateAgency = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// const deleteagency = async (req, res) => {
-//   const { agency_name } = req.params;
-//   const user = req.user;
-  
-//   if (user.usertype !== "mwp_admin" ) {
-//     return res
-//       .status(405)
-//       .json({ error: `Only mwp_admin can delete Agency`, statuscode:405 });
-//   }
-//   if (!agency_name) {
-//     return res.status(405).json({ error: `Agency name does not exist`, statuscode:405 });
-//   }
-
-//   try {
-//     const result = await deleteagencydb(agency_name);
-//     if (result?.error == true) {
-//       throw result?.errorMessage;
-//     }
-//     return res
-//       .status(200)
-//       .json({ message: "agency and associated data successfully deleted", statuscode:200 });
-//   } catch (error) {
-//     console.error(error);
-//     return res
-//       .status(500)
-//       .json({ error: `Unable to delete the agency: ${error}`, statuscode:500 });
-//   }
-// };
 const createMetadata = async (req, res) => {
   const client = await poolmwp.connect();
   try {
@@ -899,39 +808,6 @@ const searchMetadata = async (req, res) => {
     return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
-// const deleteMetadata = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
-//     if (!id) {
-//       return res.status(400).json({
-//         error: "id is required.",
-//         statuscode:400
-//       });
-//     }
-
-//     const result = await deleteMetadatadb(id);
-
-//     if (result.error) {
-//       return res.status(404).json({
-//         error: result.errorMessage,
-//         statuscode:404
-//       });
-//     }
-
-//     return res.status(200).json({
-//       message: "Metadata deleted successfully",
-//       statuscode:200
-//     });
-//   } catch (error) {
-//     console.error("Error in deleteMetadata:", error);
-//     return res.status(500).json({
-//       error: `Error in deleteMetadata: ${error.message}`,
-//       statuscode:500
-//     });
-//   }
-// };
-
 const getMetadataAllVersion = async (req,res) =>{
   try {
     const result = await getMetadataAllVersiondb();
@@ -957,176 +833,6 @@ const getMetadataAllVersion = async (req,res) =>{
     });
 }
 }
-// const getMetaDataByProductName = async (req, res) => {
-//   const { Product } = req.params;
-  
-//   if (Product == undefined) {
-//     return res.status(400).json({ error: `product name is required` });
-//   }
-//   try {
-//     const metadata = await getMetaDataByProductNamedb(Product);
-//     if (metadata?.error == true) {
-//       throw metadata?.errorMessage;
-//     }
-//     return res.status(200).send({
-//       data: metadata,
-//       msg: "metadata",
-//       statusCode: true,
-//     });
-//   } catch (error) {
-//     console.log(error);
-
-//     return res
-//       .status(500)
-//       .json({ error: `Unable to fetch data Error=${error}` });
-//   }
-// };
-
-// const getMetaDataByVersion=async(req,res)=>{
-//   const { product, version } = req.query;
-//   try {
-//     if(version==null && product!==null){
-//       const metadata=await getMetaDataByVersionP(product)
-//       if (metadata?.error == true) {
-//         throw metadata?.errorMessage;
-//       }
-//       return res.status(200).send({
-//         data: metadata,
-//         msg: "meta data",
-//         statusCode: true,
-//       });
-//     }
-//     else if(product!=null && version!=null){
-//       const metadata=await getMetaDataByVersionPV(product,version)
-//       if (metadata?.error == true) {
-//         throw metadata?.errorMessage;
-//       }
-//       return res.status(200).send({
-//         data: metadata,
-//         msg: "meta data",
-//         statusCode: true,
-//       });
-//     }
-//     else{
-//       return res.status(200).send({
-//         msg: "product is required",
-//         statusCode: true,})
-//     }
-//   } catch (error) {
-//     console.log(error);
-
-//     return res
-//       .status(500)
-//       .json({ error: `Unable to fetch data Error=${error}` });
-//   }
-// }
-
-// const searchMetaData=async(req,res)=>{
-//   const searchParams = req.query;
- 
-//   try {
-   
-//     const metadata=await searchMetaDatadb(searchParams);
-//     if(metadata?.error){
-//       return res.status(400).send({
-//         data: [],
-//         msg: "data not found",
-//         statusCode: false,
-//       });
-//     }
-//     return res.status(200).send({
-//       data: metadata,
-//       msg: "meta data",
-//       statusCode: true,
-//     });
-  
-//   } catch (error) {
-//     return res
-//     .status(500)
-//     .json({ error: `Unable to fetch data Error=${error}` });
-//   }
-// }
-
-// const updatedMetadata = async (req, res) => {
-//   let { Product } = req.params;
-//   Product=Product.toLowerCase()
-//   const {...metadata}=req.body
-
-//   try {
-//     const user = req.user;
-//     const user_id=user.id
-//     const userRoles = await getUserRoles(user.id);
-
-//     const hasRole1or2 = userRoles.includes(1) || userRoles.includes(2);
-
-//     if(user.usertype=="mwp_admin" || hasRole1or2 ){
-//       const result = await updateMetadatadb(
-//         Product,
-//         metadata,
-//         user_id
-//       );
-//     if (result?.error === true) {
-//         throw result?.errorMessage;
-//       }
-//       return res.status(200).send({
-//         data: result,
-//         msg: "Metadata updated successfully",
-//         statusCode: true,
-//       });
-//     }
-//     else{
-//       return res.status(403).send({
-//         msg: "Invalid user",
-//         statusCode: true,
-//       });
-//     }
-//   } catch (error) {
-//     console.log(error);
-//     return res
-//       .status(500)
-//       .json({ error: `Error in updating metadata: ${error}` });
-//   }
-// };
-
-// const deleteMetadata = async (req, res) => {
-//   const { product } = req.params; // Use lowercase 'product' to match the route
-//   const user = req.user;
- 
-//   try {
-//     // Fetch user roles
-//     const userRoles = await getUserRoles(user.id);
-//     const hasRole1 = userRoles.includes(1);
-    
-//     // Permission Check
-//     if (user.usertype !== "mwp_admin" && !hasRole1) {
-//       return res
-//         .status(403)
-//         .json({ error: "Only mwp_admin or User with role 1 can delete the METADATA" });
-//     }
-    
-//     // Check if product is provided
-//     if (!product) {
-//       return res.status(400).json({ error: "Product not defined" });
-//     }
-
-//     // Delete metadata from the database
-//     const result = await deleteMetadatadb(product);
-//     if (result?.error) {
-//       return res.status(result.errorCode || 500).json({ error: result.errorMessage });
-//     }
-
-//     // Success response
-//     return res.status(200).json({
-//       msg: "Metadata deleted successfully",
-//       statusCode: true,
-//     });
-    
-//   } catch (error) {
-//     console.error("Error deleting metadata:", error);
-//     return res.status(500).json({ error: `Unable to delete metadata: ${error.message || error}` });
-//   }
-// };
-
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   const user = await user.findOne({ where: { username } });
@@ -1149,35 +855,15 @@ module.exports = {
   updateUser,
   activateUser,
   deactivateUser,
-  // deleteUser,
-
   createagency,
   getagency,
   updateagency,
   activateAgency,
   deactivateAgency,
-  // deleteagency,
-
   getMetadataAllVersion,
   createMetadata,
   getAllMetadata,
   updateMetadata,
-  // deleteMetadata,
   searchMetadata,
   getallusertypes
-
-
-  // getMetaDataByProductName,
-  // updateProduct,
-  // updatedMetadata,
-  // deleteProduct,
-  // deleteMetadata,
-  // getProductById,
-  
-  // createProduct,
-  // getProduct,
-  // getMetaData,
-  // getMetaDataByVersion,
-  // searchMetaData,
-  // getMetaDataByAgency
 };

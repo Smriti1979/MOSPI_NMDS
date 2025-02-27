@@ -33,11 +33,10 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.NOW,
       }
     }, {
-      timestamps: false, // You can use createdAt and updatedAt manually
+      timestamps: false, 
       tableName: 'agencies',
     });
   
-    // Association with Users model (Cascade on delete)
     Agency.associate = (models) => {
       Agency.hasMany(models.User, {
         foreignKey: 'agency_id',
