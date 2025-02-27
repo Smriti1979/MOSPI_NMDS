@@ -294,42 +294,68 @@ async function updateUserDb(username, fieldsToUpdate) {
     };
   }
 }
-async function deleteUserDb(username) {
-  const query = `
-    UPDATE users 
-    SET is_active = false 
-    WHERE username = $1 
-    RETURNING *; -- Optional: Return updated user information
-  `;
+// async function deleteUserDb(username) {
+//   const query = `
+//     UPDATE users 
+//     SET is_active = false 
+//     WHERE username = $1 
+//     RETURNING *; -- Optional: Return updated user information
+//   `;
+
+//   try {
+//     const result = await poolmwp.query(query, [username]);
+
+//     if (result.rowCount === 0) {
+//       // No user found with the given username
+//       return {
+//         error: true,
+//         errorCode: 404,
+//         errorMessage: `User with username "${username}" not found.`,
+//       };
+//     }
+
+//     return {
+//       success: true,
+//       message: `User "${username}" has been deactivated successfully.`,
+//       data: result.rows[0], // Includes the updated user data, if RETURNING is used
+//     };
+//   } catch (err) {
+//     // Handle unexpected errors
+//     console.error("Error in deactivateUserDb:", err);
+
+//     return {
+//       error: true,
+//       errorCode: 500,
+//       errorMessage: `Database error: ${err.message}`,
+//     };
+//   }
+// }
+
+async function activateUserDb (userId) {
+  const query = "UPDATE users SET is_active = TRUE WHERE id = $1 RETURNING *";
+  const values = [userId];
 
   try {
-    const result = await poolmwp.query(query, [username]);
-
-    if (result.rowCount === 0) {
-      // No user found with the given username
-      return {
-        error: true,
-        errorCode: 404,
-        errorMessage: `User with username "${username}" not found.`,
-      };
-    }
-
-    return {
-      success: true,
-      message: `User "${username}" has been deactivated successfully.`,
-      data: result.rows[0], // Includes the updated user data, if RETURNING is used
-    };
-  } catch (err) {
-    // Handle unexpected errors
-    console.error("Error in deactivateUserDb:", err);
-
-    return {
-      error: true,
-      errorCode: 500,
-      errorMessage: `Database error: ${err.message}`,
-    };
+      const result = await pool.query(query, values);
+      return result.rows[0]; // Return updated user data
+  } catch (error) {
+      throw error;
   }
-}
+};
+
+// Deactivate User
+async function deactivateUserDb(userId) {
+  const query = "UPDATE users SET is_active = FALSE WHERE id = $1 RETURNING *";
+  const values = [userId];
+
+  try {
+      const result = await pool.query(query, values);
+      return result.rows[0]; // Return updated user data
+  } catch (error) {
+      throw error;
+  }
+};
+
 async function getUsertypeFromUsername(username) {
   const query = `SELECT usertype FROM users WHERE username = $1`;
   
@@ -429,60 +455,88 @@ async function updateagencydb(agency_name, new_agency_name) {
   }
   return data.rows[0];
 }
-async function deleteagencydb(agency_name) {
-  try {
-    // Start a transaction
-    await poolmwp.query("BEGIN");
+const pool = require("../config/db"); // PostgreSQL connection pool
 
-    // Fetch the agency_id for the given agency_name
-    const fetchAgencyQuery = `SELECT agency_id FROM agencies WHERE agency_name = $1`;
-    const agencyResult = await poolmwp.query(fetchAgencyQuery, [agency_name]);
+// Activate Agency
+async function activeAgencydb(agencyId) {
+    const query = "UPDATE agencies SET is_active = TRUE WHERE id = $1 RETURNING *";
+    const values = [agencyId];
 
-    if (agencyResult.rows.length === 0) {
-      // Rollback if the agency does not exist
-      await poolmwp.query("ROLLBACK");
-      return {
-        error: true,
-        errorCode: 404,
-        errorMessage: `Agency with name "${agency_name}" not found.`,
-      };
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0]; // Return updated agency data
+    } catch (error) {
+        throw error;
     }
+};
 
-    const agencyId = agencyResult.rows[0].agency_id;
+// Deactivate Agency
+async function deactiveAgencydb (agencyId){
+    const query = "UPDATE agencies SET is_active = FALSE WHERE id = $1 RETURNING *";
+    const values = [agencyId];
 
-    // Mark the agency as inactive
-    const deactivateAgencyQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
-    await poolmwp.query(deactivateAgencyQuery, [agency_name]);
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0]; // Return updated agency data
+    } catch (error) {
+        throw error;
+    }
+};
 
-    // Delete associated metadata
-    const deleteMetadataQuery = `UPDATE metadata SET is_active = false WHERE agency_id = $1`;
-    await poolmwp.query(deleteMetadataQuery, [agencyId]);
+// async function deleteagencydb(agency_name) {
+//   try {
+//     // Start a transaction
+//     await poolmwp.query("BEGIN");
 
-    // Delete associated users
-    const deleteUsersQuery = `UPDATE users SET is_active = false WHERE agency_id = $1`;
-    await poolmwp.query(deleteUsersQuery, [agencyId]);
+//     // Fetch the agency_id for the given agency_name
+//     const fetchAgencyQuery = `SELECT agency_id FROM agencies WHERE agency_name = $1`;
+//     const agencyResult = await poolmwp.query(fetchAgencyQuery, [agency_name]);
 
-    // Finally, delete the agency
-    const deleteAgencyQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
-    await poolmwp.query(deleteAgencyQuery, [agency_name]);
+//     if (agencyResult.rows.length === 0) {
+//       // Rollback if the agency does not exist
+//       await poolmwp.query("ROLLBACK");
+//       return {
+//         error: true,
+//         errorCode: 404,
+//         errorMessage: `Agency with name "${agency_name}" not found.`,
+//       };
+//     }
 
-    // Commit the transaction
-    await poolmwp.query("COMMIT");
+//     const agencyId = agencyResult.rows[0].agency_id;
 
-    return {
-      success: true,
-      message: `Agency and all associated records deleted successfully.`,
-    };
-  } catch (error) {
-    // Rollback transaction in case of an error
-    await poolmwp.query("ROLLBACK");
-    return {
-      error: true,
-      errorCode: 500,
-      errorMessage: `Error deleting agency: ${error.message}`,
-    };
-  }
-}
+//     // Mark the agency as inactive
+//     const deactivateAgencyQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
+//     await poolmwp.query(deactivateAgencyQuery, [agency_name]);
+
+//     // Delete associated metadata
+//     const deleteMetadataQuery = `UPDATE metadata SET is_active = false WHERE agency_id = $1`;
+//     await poolmwp.query(deleteMetadataQuery, [agencyId]);
+
+//     // Delete associated users
+//     const deleteUsersQuery = `UPDATE users SET is_active = false WHERE agency_id = $1`;
+//     await poolmwp.query(deleteUsersQuery, [agencyId]);
+
+//     // Finally, delete the agency
+//     const deleteAgencyQuery = `UPDATE agencies SET is_active = false WHERE agency_name = $1`;
+//     await poolmwp.query(deleteAgencyQuery, [agency_name]);
+
+//     // Commit the transaction
+//     await poolmwp.query("COMMIT");
+
+//     return {
+//       success: true,
+//       message: `Agency and all associated records deleted successfully.`,
+//     };
+//   } catch (error) {
+//     // Rollback transaction in case of an error
+//     await poolmwp.query("ROLLBACK");
+//     return {
+//       error: true,
+//       errorCode: 500,
+//       errorMessage: `Error deleting agency: ${error.message}`,
+//     };
+//   }
+// }
 async function createMetadatadb({
   agency_id,
   product_name,
@@ -815,41 +869,41 @@ async function getAllMetadatadb() {
     };
   }
 }
-async function deleteMetadatadb(id) {
-  try {
-    // Update query to mark metadata as inactive
-    const deactivateQuery = `
-      UPDATE metadata
-      SET is_active = false
-      WHERE metadata_id = $1;
-    `;
+// async function deleteMetadatadb(id) {
+//   try {
+//     // Update query to mark metadata as inactive
+//     const deactivateQuery = `
+//       UPDATE metadata
+//       SET is_active = false
+//       WHERE metadata_id = $1;
+//     `;
 
-    const result = await poolmwp.query(deactivateQuery, [id]);
+//     const result = await poolmwp.query(deactivateQuery, [id]);
 
-    // Check if any rows were affected
-    if (result.rowCount === 0) {
-      return {
-        error: true,
-        errorCode: 404,
-        errorMessage: "No metadata found with the given ID.",
-      };
-    }
+//     // Check if any rows were affected
+//     if (result.rowCount === 0) {
+//       return {
+//         error: true,
+//         errorCode: 404,
+//         errorMessage: "No metadata found with the given ID.",
+//       };
+//     }
 
-    return {
-      success: true,
-      message: "Metadata marked as inactive successfully.",
-    };
-  } catch (error) {
-    // Log the error and return a structured response
-    console.error("Error in deleteMetadatadb:", error);
+//     return {
+//       success: true,
+//       message: "Metadata marked as inactive successfully.",
+//     };
+//   } catch (error) {
+//     // Log the error and return a structured response
+//     console.error("Error in deleteMetadatadb:", error);
 
-    return {
-      error: true,
-      errorCode: 500,
-      errorMessage: `An unexpected error occurred: ${error.message}`,
-    };
-  }
-}
+//     return {
+//       error: true,
+//       errorCode: 500,
+//       errorMessage: `An unexpected error occurred: ${error.message}`,
+//     };
+//   }
+// }
 async function searchMetadataDb(filters) {
   const { product_name, version, agency_id } = filters;
   const client = await poolmwp.connect(); // Ensure you're using the proper database connection
@@ -1115,18 +1169,22 @@ module.exports = {
   createUserdb,
   getUserdb,
   updateUserDb,
-  deleteUserDb,
+  activateUserDb,
+  deactivateUserDb,
+  // deleteUserDb,
   
   createagencydb,
   getagencydb,
   updateagencydb,
-  deleteagencydb,
+  activeAgencydb,
+  deactiveAgencydb,
+  // deleteagencydb,
 
   createMetadatadb,
   getAllMetadatadb,
   getMetadataAllVersiondb,
   updateMetadatadb,
-  deleteMetadatadb,
+  // deleteMetadatadb,
   searchMetadataDb,
   getUsertypeFromUsername,
 

@@ -12,17 +12,21 @@ const {
   createagencydb,
   getagencydb,
   updateagencydb,
-  deleteagencydb,
+  activateUserDb,
+  deactivateUserDb,
+  // deleteagencydb,
   getUsertypeFromUsername,
   createUserdb,
   getUserdb,
   updateUserDb,
-  deleteUserDb,
+  activeAgencydb,
+  deactiveAgencydb,
+  // deleteUserDb,
   createMetadatadb,
   updateMetadatadb,
   getAllMetadatadb,
   getMetadataAllVersiondb,
-  deleteMetadatadb,
+  // deleteMetadatadb,
   searchMetadataDb,
 
   allowedCreateOperations,
@@ -359,45 +363,45 @@ const updateUser = async (req, res) => {
     });
   }
 };
-const deleteUser = async (req, res) => {
-  let { username } = req.params;
-  const user = req.user;
+// const deleteUser = async (req, res) => {
+//   let { username } = req.params;
+//   const user = req.user;
 
-  try {
-    const userResult = await getUsertypeFromUsername(username);
-    if (!userResult || userResult.error) {
-      return res.status(404).json({
-        error: `User with username "${username}" not found.`,
-        statuscode:404
-      });
-    }
+//   try {
+//     const userResult = await getUsertypeFromUsername(username);
+//     if (!userResult || userResult.error) {
+//       return res.status(404).json({
+//         error: `User with username "${username}" not found.`,
+//         statuscode:404
+//       });
+//     }
 
-    const { usertype } = userResult;
+//     const { usertype } = userResult;
 
-    const allowed = await allowedDeleteOperations(user.usertype);
-    console.log("Allowed operations:", allowed);
+//     const allowed = await allowedDeleteOperations(user.usertype);
+//     console.log("Allowed operations:", allowed);
 
-    if (!allowed || !allowed.includes(usertype)) {
-      return res.status(405).json({
-        error: `You don't have access to delete a user with usertype: ${usertype}`,
-        statuscode:405
-      });
-    }
+//     if (!allowed || !allowed.includes(usertype)) {
+//       return res.status(405).json({
+//         error: `You don't have access to delete a user with usertype: ${usertype}`,
+//         statuscode:405
+//       });
+//     }
 
-    const deletedUser = await deleteUserDb(username);
-    if (deletedUser.error) {
-      return res.status(deletedUser.errorCode).json({ error: deletedUser.errorMessage });
-    }
+//     const deletedUser = await deleteUserDb(username);
+//     if (deletedUser.error) {
+//       return res.status(deletedUser.errorCode).json({ error: deletedUser.errorMessage });
+//     }
 
-    return res.status(200).send({
-      message: "User deleted successfully",
-      deletedUser: deletedUser.data, // Optionally include deleted user info
-      statusCode: 200
-    });
-  } catch (error) {
-    return res.status(500).json({ error: `Error deleting user: ${error.message}`, statuscode:500 });
-  }
-};
+//     return res.status(200).send({
+//       message: "User deleted successfully",
+//       deletedUser: deletedUser.data, // Optionally include deleted user info
+//       statusCode: 200
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ error: `Error deleting user: ${error.message}`, statuscode:500 });
+//   }
+// };
 const getallusertypes = async (req, res) => {
   try {
     // Call the database query function to get all user types
@@ -411,6 +415,36 @@ const getallusertypes = async (req, res) => {
   } catch (error) {
     console.error("Error retrieving user types:", error);
     return res.status(500).json({ message: "Internal server error", statusCode: 500 });
+  }
+};
+const activateUserController = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+      const user = await activateUserDb(userId);
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
+      res.status(200).json({ message: "User activated successfully", user });
+  } catch (error) {
+      console.error("Error activating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Deactivate User Controller
+const deactivateUserController = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+      const user = await deactivateUserDb(userId);
+      if (!user) {
+          return res.status(404).json({ message: "User not found" });
+      }
+      res.status(200).json({ message: "User deactivated successfully", user });
+  } catch (error) {
+      console.error("Error deactivating user:", error);
+      res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -518,34 +552,66 @@ const updateagency = async (req, res) => {
       .json({ error: `Error in updating agency data: ${error}`, statuscode:500 });
   }
 };
-const deleteagency = async (req, res) => {
-  const { agency_name } = req.params;
-  const user = req.user;
-  
-  if (user.usertype !== "mwp_admin" ) {
-    return res
-      .status(405)
-      .json({ error: `Only mwp_admin can delete Agency`, statuscode:405 });
-  }
-  if (!agency_name) {
-    return res.status(405).json({ error: `Agency name does not exist`, statuscode:405 });
-  }
+// Activate Agency Controller
+const activateAgencyController = async (req, res) => {
+  const { agencyId } = req.params;
 
   try {
-    const result = await deleteagencydb(agency_name);
-    if (result?.error == true) {
-      throw result?.errorMessage;
-    }
-    return res
-      .status(200)
-      .json({ message: "agency and associated data successfully deleted", statuscode:200 });
+      const agency = await activeAgencydb(agencyId);
+      if (!agency) {
+          return res.status(404).json({ message: "Agency not found" });
+      }
+      res.status(200).json({ message: "Agency activated successfully", agency });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: `Unable to delete the agency: ${error}`, statuscode:500 });
+      console.error("Error activating agency:", error);
+      res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Deactivate Agency Controller
+const deactivateAgencyController = async (req, res) => {
+  const { agencyId } = req.params;
+
+  try {
+      const agency = await deactiveAgencydb(agencyId);
+      if (!agency) {
+          return res.status(404).json({ message: "Agency not found" });
+      }
+      res.status(200).json({ message: "Agency deactivated successfully", agency });
+  } catch (error) {
+      console.error("Error deactivating agency:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// const deleteagency = async (req, res) => {
+//   const { agency_name } = req.params;
+//   const user = req.user;
+  
+//   if (user.usertype !== "mwp_admin" ) {
+//     return res
+//       .status(405)
+//       .json({ error: `Only mwp_admin can delete Agency`, statuscode:405 });
+//   }
+//   if (!agency_name) {
+//     return res.status(405).json({ error: `Agency name does not exist`, statuscode:405 });
+//   }
+
+//   try {
+//     const result = await deleteagencydb(agency_name);
+//     if (result?.error == true) {
+//       throw result?.errorMessage;
+//     }
+//     return res
+//       .status(200)
+//       .json({ message: "agency and associated data successfully deleted", statuscode:200 });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ error: `Unable to delete the agency: ${error}`, statuscode:500 });
+//   }
+// };
 const createMetadata = async (req, res) => {
   const client = await poolmwp.connect();
   try {
@@ -834,38 +900,38 @@ const searchMetadata = async (req, res) => {
     return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
-const deleteMetadata = async (req, res) => {
-  try {
-    const { id } = req.params;
+// const deleteMetadata = async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({
-        error: "id is required.",
-        statuscode:400
-      });
-    }
+//     if (!id) {
+//       return res.status(400).json({
+//         error: "id is required.",
+//         statuscode:400
+//       });
+//     }
 
-    const result = await deleteMetadatadb(id);
+//     const result = await deleteMetadatadb(id);
 
-    if (result.error) {
-      return res.status(404).json({
-        error: result.errorMessage,
-        statuscode:404
-      });
-    }
+//     if (result.error) {
+//       return res.status(404).json({
+//         error: result.errorMessage,
+//         statuscode:404
+//       });
+//     }
 
-    return res.status(200).json({
-      message: "Metadata deleted successfully",
-      statuscode:200
-    });
-  } catch (error) {
-    console.error("Error in deleteMetadata:", error);
-    return res.status(500).json({
-      error: `Error in deleteMetadata: ${error.message}`,
-      statuscode:500
-    });
-  }
-};
+//     return res.status(200).json({
+//       message: "Metadata deleted successfully",
+//       statuscode:200
+//     });
+//   } catch (error) {
+//     console.error("Error in deleteMetadata:", error);
+//     return res.status(500).json({
+//       error: `Error in deleteMetadata: ${error.message}`,
+//       statuscode:500
+//     });
+//   }
+// };
 
 const getMetadataAllVersion = async (req,res) =>{
   try {
@@ -1082,18 +1148,22 @@ module.exports = {
   createUser,
   getUser,
   updateUser,
-  deleteUser,
+  activateUserController,
+  deactivateUserController,
+  // deleteUser,
 
   createagency,
   getagency,
   updateagency,
-  deleteagency,
+  activateAgencyController,
+  deactivateAgencyController,
+  // deleteagency,
 
   getMetadataAllVersion,
   createMetadata,
   getAllMetadata,
   updateMetadata,
-  deleteMetadata,
+  // deleteMetadata,
   searchMetadata,
   getallusertypes
 
