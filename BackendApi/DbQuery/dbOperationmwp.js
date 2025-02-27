@@ -172,6 +172,7 @@ async function getUserdb(allowedUsertypes) {
   try {
     const query = `
       SELECT 
+        users.user_id,
         users.username, 
         users.agency_id, 
         users.usertype, 
