@@ -10,8 +10,8 @@ const {
   changePassword,
   createagency,
   updateagency,
-  // activateUserController,
-  // deactivateUserController,
+  activateUserController,
+  deactivateUserController,
 
   activateAgencyController,
   deactivateAgencyController,

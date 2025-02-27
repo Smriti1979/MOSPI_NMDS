@@ -448,7 +448,6 @@ const deactivateUserController = async (req, res) => {
   }
 };
 
-AGENCY
 
 const createagency = async (req, res) => {
   const { agency_name } = req.body;
