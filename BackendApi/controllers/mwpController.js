@@ -727,29 +727,48 @@ const createMetadata = async (req, res) => {
 };
 const getAllMetadata = async (req, res) => {
   try {
-    const result = await getAllMetadatadb();
+    const result = await getAllMetadatadb(); // assuming this only returns latest versions
 
     if (result.error) {
       return res.status(500).json({
         error: result.errorMessage,
-        statuscode:500
+        statuscode: 500,
       });
     }
 
+    const groupedData = {};
+
+    result.data.forEach((item) => {
+      const { metadata_id, agency_id, product_name, version, ...rest } = item;
+
+      groupedData[product_name] = {
+        metadata_id,
+        agency_id,
+        product_name,
+        versions: [
+          {
+            version,
+            ...rest,
+          }
+        ],
+      };
+    });
+
     return res.status(200).json({
       error: false,
-      data: result.data,
+      data: groupedData,
       message: "Metadata fetched successfully.",
-      statuscode:200
+      statuscode: 200,
     });
   } catch (error) {
     console.error("Error in getAllMetadata:", error);
     return res.status(500).json({
       error: `Error in getAllMetadata: ${error.message}`,
-      statuscode:500
+      statuscode: 500,
     });
   }
 };
+
 const updateMetadata = async (req, res) => {
   try {
     const id = req.params.id;
@@ -811,31 +830,52 @@ const searchMetadata = async (req, res) => {
     return res.status(500).json({ error: "Internal server error", statuscode:500 });
   }
 };
-const getMetadataAllVersion = async (req,res) =>{
+const getMetadataAllVersion = async (req, res) => {
   try {
     const result = await getMetadataAllVersiondb();
 
     if (result.error) {
       return res.status(500).json({
         error: result.errorMessage,
-        statuscode:500
+        statuscode: 500,
       });
     }
 
+    const groupedData = {};
+
+    result.data.forEach((item) => {
+      const { metadata_id, agency_id, product_name, version, ...rest } = item;
+
+      if (!groupedData[product_name]) {
+        groupedData[product_name] = {
+          metadata_id,
+          agency_id,
+          product_name,
+          versions: [],
+        };
+      }
+
+      groupedData[product_name].versions.push({
+        version,
+        ...rest,
+      });
+    });
+
     return res.status(200).json({
       error: false,
-      data: result.data,
+      data: groupedData,
       message: "Metadata fetched successfully.",
-      statuscode:200
+      statuscode: 200,
     });
   } catch (error) {
-    console.error("Error in getAllMetadata:", error);
+    console.error("Error in getMetadataAllVersion:", error);
     return res.status(500).json({
-      error: `Error in getAllMetadata: ${error.message}`,
-      statuscode:500
+      error: `Error in getMetadataAllVersion: ${error.message}`,
+      statuscode: 500,
     });
-}
-}
+  }
+};
+
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   const user = await user.findOne({ where: { username } });

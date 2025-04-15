@@ -282,6 +282,7 @@ async function activateUserDb (user_id) {
   }
 };
 async function deactivateUserDb(user_id) {
+  
   const query = "UPDATE users SET is_active = FALSE WHERE user_id = $1 RETURNING *";
   const values = [user_id];
 
